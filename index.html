@@ -1,0 +1,3455 @@
+<!doctype html>
+<html lang="de">
+<meta charset="utf-8">
+<title>Sehtraining</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Sehtraining">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#101417">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="symbol-180.png">
+<style>
+@font-face { font-family: "Atkinson Hyperlegible"; font-weight: 400; font-style: normal; font-display: swap;
+  src: url("schrift/AtkinsonHyperlegible-Regular.ttf") format("truetype"); }
+@font-face { font-family: "Atkinson Hyperlegible"; font-weight: 700; font-style: normal; font-display: swap;
+  src: url("schrift/AtkinsonHyperlegible-Bold.ttf") format("truetype"); }
+</style>
+<style>
+/* Aufbau: eine Bildschirmseite für das iPhone im Hochformat; Übersicht dunkel und groß
+   geschrieben (gelesen wird ohne Lesebrille), im Training nur das mittlere Grau der Reize.
+   Alle Schriftgrößen hängen an der Grundgröße (rem); die setzt das Skript nach der Wahl
+   „Schrift kleiner/größer“ auf der Startseite, Vorgabe 28 Punkte.
+   An der Stelle KOPF setzt das Bauwerkzeug die Schrift ein: bei claude.ai von Google geladen,
+   in der Web-App als mitgelieferte Datei, dazu dort Symbol, Manifest und „noindex“. */
+:root {
+  --nacht: #101417;        /* Grund der Übersicht, leicht bläulich */
+  --flaeche: #1b2227;      /* Karten und Tabellen */
+  --linie: #2f3a41;        /* Trennlinien */
+  --text: #eef2f3;         /* Schrift */
+  --leise: #a3b0b6;        /* Nebenschrift */
+  --akzent: #9fd3c4;       /* Hauptknopf, ein ruhiges Optiker-Türkis */
+  --akzent-text: #0c1a17;
+  --warnung: #f2c46d;
+  --grau: rgb(186,186,186);/* mittleres Grau der Reize, wird zur Laufzeit gesetzt */
+  --knopf-hg: #26313a; --knopf-text: #eef2f3; --hg: #101417;
+  --schrift: "Atkinson Hyperlegible", "Helvetica Neue", Arial, sans-serif;
+  color-scheme: dark;
+}
+html { font-size: 28px; }
+/* Verborgenes bleibt verborgen, auch wenn eine Regel unten eine Anzeigeart setzt (claude.ai bringt
+   diese Regel selbst mit, die Web-App nicht). */
+[hidden] { display: none !important; }
+html, body { height: 100%; }
+body {
+  background: var(--nacht); color: var(--text); font-family: var(--schrift);
+  font-size: 1rem; line-height: 1.45; -webkit-text-size-adjust: 100%; overflow-wrap: anywhere;
+  margin-top: 0; margin-bottom: 0;   /* sonst ist jede Seite 16 Punkte höher als der Bildschirm und wackelt */
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+body.training { background: var(--grau); }
+h1 { font-size: 1.4rem; line-height: 1.1; margin: 0; letter-spacing: -0.01em; text-wrap: balance; -webkit-hyphens: auto; hyphens: auto; }
+h2 { font-size: 1.2rem; line-height: 1.15; margin: 0; text-wrap: balance; -webkit-hyphens: auto; hyphens: auto; }
+h3 { font-size: 1.05rem; margin: 8px 0 0; }
+p { margin: 0; }
+button { font: inherit; }
+.gross {
+  display: block; width: 100%; min-height: 64px; border-radius: 14px; border: 1px solid var(--linie);
+  background: var(--knopf-hg); color: var(--knopf-text); font-size: 1rem; font-weight: 700; padding: 12px 16px;
+  cursor: pointer; overflow-wrap: break-word; -webkit-hyphens: auto; hyphens: auto;
+}
+.gross.haupt { background: var(--akzent); color: var(--akzent-text); border-color: var(--akzent); }
+.gross:disabled { opacity: 0.4; cursor: default; }
+.gross.gewaehlt { outline: 3px solid var(--akzent); }
+.gross:focus-visible, .klein:focus-visible { outline: 3px solid var(--warnung); outline-offset: 2px; }
+.klein { min-height: 48px; padding: 8px 14px; border-radius: 12px; border: 1px solid var(--linie);
+  background: var(--knopf-hg); color: var(--knopf-text); font-size: 0.85rem; cursor: pointer; }
+
+/* Übersicht */
+/* Oben und unten Platz für Uhrzeitleiste und Wischbalken, wenn die Web-App den ganzen Bildschirm füllt. */
+#ansicht-start { display: flex; flex-direction: column; gap: 18px; max-width: 560px; margin: 0 auto;
+  padding-block: calc(18px + env(safe-area-inset-top, 0px)) calc(28px + env(safe-area-inset-bottom, 0px)); }
+.kopf { display: flex; flex-direction: column; gap: 4px; }
+.kopf .unter { color: var(--leise); font-size: 0.85rem; }
+.karte { background: var(--flaeche); border: 1px solid var(--linie); border-radius: 18px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.eyebrow { font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--leise); }
+dl { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; margin: 0; }
+dt { color: var(--leise); }
+dd { margin: 0; font-weight: 700; min-width: 0; }
+/* Schmaler Bildschirm im Verhältnis zur Schrift (Klasse „eng“ setzt das Skript, auf dem iPhone ab etwa
+   24 Punkten Schrift): Bezeichnung über dem Wert statt daneben, sonst bleibt für den Wert nur eine
+   schmale Spalte. */
+html.eng dl { grid-template-columns: minmax(0, 1fr); row-gap: 0; }
+html.eng dd { margin-bottom: 10px; }
+.hinweis { border-left: 4px solid var(--warnung); padding: 6px 0 6px 12px; color: var(--text); }
+/* Knopfreihe: zwei Spalten nur, wo jeder Knopf mindestens 190 Punkte breit wird (iPad),
+   sonst untereinander; so passt die große Schrift immer in den Knopf. */
+.reihe { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
+.stand { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; font-size: 0.9rem; }
+.stand dd { font-weight: 400; font-variant-numeric: tabular-nums; }
+.regeln { color: var(--leise); font-size: 0.9rem; display: flex; flex-direction: column; gap: 6px; }
+
+/* Module (Einrichtung, Buchstabentest) füllen den Bildschirm */
+#ansicht-modul { position: fixed; inset: 0; background: var(--hg); z-index: 5; }
+.modul-flaeche { position: absolute; inset: 0; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+
+/* Textansicht (Ergebnisse, Verlauf) */
+#ansicht-text { max-width: 760px; margin: 0 auto;
+  padding-block: calc(18px + env(safe-area-inset-top, 0px)) calc(28px + env(safe-area-inset-bottom, 0px)); }
+.text-box { display: flex; flex-direction: column; gap: 14px; }
+.werte dd { font-variant-numeric: tabular-nums; }
+.tabelle-rahmen { overflow-x: auto; border: 1px solid var(--linie); border-radius: 12px; }
+table.verlauf { border-collapse: collapse; font-size: 0.75rem; font-variant-numeric: tabular-nums; min-width: 100%; }
+.verlauf th, .verlauf td { padding: 6px 10px; border-bottom: 1px solid var(--linie); text-align: right; white-space: nowrap; }
+.verlauf th { color: var(--leise); font-weight: 400; background: var(--flaeche); }
+.daten-text { width: 100%; height: 40vh; font-size: 12px; background: var(--flaeche); color: var(--text); border: 1px solid var(--linie); border-radius: 10px; }
+.wahl { display: flex; flex-direction: column; gap: 10px; }
+ol.schritte { margin: 0; padding-left: 1.4em; display: flex; flex-direction: column; gap: 8px; }
+.schrift-reihe { display: flex; flex-direction: row; align-items: center; gap: 10px; flex-wrap: wrap; }
+.schrift-reihe span { color: var(--leise); margin-right: auto; }
+.leise { color: var(--leise); font-size: 0.9rem; }
+/* Eingabefelder (Einrichtung der Sicherung in der Web-App) */
+.feld-titel { color: var(--leise); margin-bottom: -8px; }
+.eingabe { display: block; width: 100%; box-sizing: border-box; min-height: 56px; padding: 10px 12px; border-radius: 12px;
+  border: 1px solid var(--linie); background: var(--flaeche); color: var(--text); font: inherit; font-size: 1rem; }
+.eingabe-klein { font-size: 0.75rem; }
+.eingabe:focus { outline: 3px solid var(--akzent); outline-offset: 1px; }
+
+/* Training: nur Grau, der Reiz in der Mitte, Antworten unten */
+#ansicht-sitzung { position: fixed; inset: 0; background: var(--grau); display: grid; grid-template-rows: auto 1fr auto;
+  padding: calc(env(safe-area-inset-top, 0px) + 8px) max(12px, env(safe-area-inset-right, 0px)) calc(env(safe-area-inset-bottom, 0px) + 12px) max(12px, env(safe-area-inset-left, 0px)); z-index: 4; }
+/* Kopf der Sitzung: links „Block n von 4“, rechts die beiden Knöpfe in einer Reihe; reicht die Breite
+   bei großer Schrift nicht, rutscht die Knopfreihe unter die Angabe. */
+.sitzung-kopf { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px; }
+.sitzung-knoepfe { display: flex; gap: 8px; margin-left: auto; }
+.sitzung-kopf .klein { background: rgba(0,0,0,0.12); color: rgba(0,0,0,0.6); border-color: rgba(0,0,0,0.15); }
+#sitzung-info { color: rgba(0,0,0,0.55); font-size: 0.75rem; }
+.reiz-feld { display: grid; place-items: center; position: relative; min-height: 0; }
+#reiz { display: block; image-rendering: pixelated; }
+#sitzung-meldung { position: absolute; inset: auto 0 auto 0; margin: 0 auto; max-width: 520px; background: rgba(16,20,23,0.92); color: var(--text);
+  border-radius: 18px; padding: 14px; display: flex; flex-direction: column; gap: 10px;
+  max-height: 100%; overflow-y: auto; -webkit-overflow-scrolling: touch; box-sizing: border-box; }
+#sitzung-meldung h2 { font-size: 1.1rem; }
+#sitzung-meldung[hidden] { display: none; }
+#antworten { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+#antworten button { min-height: 96px; border-radius: 18px; border: 0; background: rgba(0,0,0,0.16); color: rgba(0,0,0,0.65);
+  font-size: 40px; font-weight: 700; cursor: pointer; touch-action: manipulation; }
+#antworten button:disabled { opacity: 0.35; }
+/* Markierung des laufenden Abschnitts: der Knopf wird heller, ohne zu blenden. */
+#antworten button.leuchtet { opacity: 1; background: rgba(255,255,255,0.45); color: rgba(0,0,0,0.8); }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+
+<main id="ansicht-start">
+  <header class="kopf">
+    <h1>Sehtraining</h1>
+    <p class="unter">Kontrast-Training nach Polat für das Sehen in der Nähe</p>
+  </header>
+
+  <section class="karte" aria-labelledby="naechste-art">
+    <span class="eyebrow">Nächste Sitzung</span>
+    <h2 id="naechste-art">–</h2>
+    <dl id="naechste-details"></dl>
+    <p class="hinweis" id="hinweis-einrichtung" hidden>Zuerst einmal den Bildschirm einrichten (Größe, Helligkeit, Bildtakt).</p>
+    <p class="hinweis" id="hinweis-heute" hidden>Heute ist schon geübt. Die nächste Sitzung geht ab morgen; das Gelernte festigt sich im Schlaf.</p>
+    <button class="gross haupt" type="button" id="knopf-sitzung">Sitzung beginnen</button>
+    <button class="gross" type="button" id="knopf-probe">Probelauf ohne Speichern</button>
+  </section>
+
+  <section class="karte">
+    <span class="eyebrow">So übst du</span>
+    <div class="regeln">
+      <p>40 cm Abstand, ohne Lesebrille, beide Augen offen, Raum abgedunkelt, Helligkeit ganz hoch.</p>
+      <p>4 bis 5 Sitzungen pro Woche, höchstens eine am Tag, etwa 10 bis 12 Minuten.</p>
+      <p>Bei Kopfschmerzen oder starker Anstrengung aufhören.</p>
+    </div>
+  </section>
+
+  <section class="karte">
+    <span class="eyebrow">Stand</span>
+    <dl class="stand">
+      <dt id="stand-person-titel" hidden>Person</dt><dd id="stand-person" hidden>–</dd>
+      <dt>Training</dt><dd id="stand-sitzungen">–</dd>
+      <dt>Buchstabentest</dt><dd id="stand-visus">–</dd>
+      <dt>Daten</dt><dd id="stand-speicher">–</dd>
+    </dl>
+    <div class="reihe">
+      <button class="gross" type="button" id="knopf-verlauf">Verlauf</button>
+      <button class="gross" type="button" id="knopf-test">Buchstabentest</button>
+      <button class="gross" type="button" id="knopf-einrichtung">Einrichtung</button>
+      <button class="gross" type="button" id="knopf-brille">Brille</button>
+    </div>
+    <button class="gross" type="button" id="knopf-sicherung" hidden>Sicherung</button>
+    <button class="gross" type="button" id="knopf-daten">Daten als Datei sichern</button>
+  </section>
+
+  <section class="karte schrift-reihe" aria-label="Schriftgröße">
+    <span>Schrift</span>
+    <button class="klein" type="button" id="schrift-kleiner">kleiner</button>
+    <button class="klein" type="button" id="schrift-groesser">größer</button>
+  </section>
+</main>
+
+<section id="ansicht-modul" hidden></section>
+
+<section id="ansicht-sitzung" hidden aria-label="Sitzung">
+  <div class="sitzung-kopf">
+    <span id="sitzung-info">Block 1 von 4</span>
+    <span class="sitzung-knoepfe">
+      <button class="klein" type="button" id="knopf-pause">Pause</button>
+      <button class="klein" type="button" id="knopf-abbrechen">Abbrechen</button>
+    </span>
+  </div>
+  <div class="reiz-feld">
+    <canvas id="reiz" width="10" height="10"></canvas>
+    <div id="sitzung-meldung">
+      <h2 id="sitzung-meldung-titel">–</h2>
+      <p id="sitzung-meldung-text"></p>
+      <button class="gross haupt" type="button" id="sitzung-los">Los</button>
+    </div>
+  </div>
+  <div id="antworten" hidden>
+    <button type="button" id="antwort-1" aria-label="Erster Abschnitt">1</button>
+    <button type="button" id="antwort-2" aria-label="Zweiter Abschnitt">2</button>
+  </div>
+</section>
+
+<section id="ansicht-text" hidden></section>
+
+<script>
+// Ziel der Sicherung und Fassung des Programms (vom Bauwerkzeug eingesetzt)
+window.SEHTRAINING_ZIEL = {"api": "https://api.github.com", "besitzer": "ThomasBerndHansen846", "repo": "sehtraining-daten", "zweig": "main"};
+window.SEHTRAINING_FASSUNG = "2026-10-31-8a7706";
+</script>
+<script>
+// ===== logik.js =====
+// Rechenregeln des Sehtrainings: Treppenverfahren und Steigerung von Sitzung zu Sitzung.
+// Diese Datei braucht keinen Browser; sie wird auch in den Rechentests mit jsc geladen.
+// Begriffe wie Feinheit, Maskenwirkung, Durchlauf: siehe AGENTS.md (Begriffe).
+// Herkunft jeder Regel (übernommen, abgeleitet, eigene Regel): siehe RECHERCHE.md.
+(function (global) {
+  'use strict';
+
+  // ---------------------------------------------------------------------------
+  // Feste Stufen des Trainings
+  // ---------------------------------------------------------------------------
+
+  // Feinheit in Streifenpaaren je Grad, von grob nach fein.
+  var FEINHEITEN = [2, 3, 4, 6, 8];
+  // Ausrichtung der Streifen in Grad (0 = senkrechte Streifen, 90 = waagrechte).
+  // Reihenfolge: senkrecht, waagrecht, die beiden schrägen.
+  var AUSRICHTUNGEN = [0, 90, 45, 135];
+  // Abstand der Flanker in Wellenlängen; wechselt reihum mit der Ausrichtung.
+  var ABSTAENDE = [3, 2, 4];
+  // Pause bis zur Maske in Bildern (bei 60 Bildern je Sekunde 233, 200, 150, 116, 83, 68 ms).
+  var PAUSEN_BILDER = [14, 12, 9, 7, 5, 4];
+  // Index der Pause, mit der es nach einer Verkürzung der Darbietung wieder beginnt (116 ms).
+  var PAUSE_NEUSTART = 3;
+  // Index der Pause, an der Eingangssitzung 2 misst (150 ms).
+  var PAUSE_EINGANG = 2;
+  // Darbietungsdauer in Bildern (116, 68, 34 ms). Die Maske ist gleich lang.
+  var DAUER_BILDER = [7, 4, 2];
+  // Die vier Bedingungen in der festen Reihenfolge einer Sitzung.
+  var BEDINGUNGEN = ['ziel', 'flanker', 'maske', 'flanker_maske'];
+  var BEDINGUNG_NAME = {
+    ziel: 'Ziel allein',
+    flanker: 'Ziel mit Flankern',
+    maske: 'Ziel, dann Maske',
+    flanker_maske: 'Ziel mit Flankern, dann Maske'
+  };
+
+  // ---------------------------------------------------------------------------
+  // Treppenverfahren: 3 richtig in Folge -> eine Treppenstufe blasser,
+  // 1 falsch -> eine Treppenstufe kräftiger. Gerechnet wird mit dem Logarithmus
+  // des Kontrasts (Zehnerlogarithmus, 1 % = -2, 10 % = -1, 100 % = 0).
+  // ---------------------------------------------------------------------------
+
+  var STUFE = 0.1;                       // eine Treppenstufe = Faktor 1,26
+  var UNTERGRENZE = -2;                  // 1 % Kontrast
+  var OBERGRENZE = Math.log10(0.8);      // kräftiger als 80 % zeigt die Seite das Ziel nicht
+  var UMKEHR_ZIEL = 8;                   // ein Block endet nach 8 Umkehrpunkten
+  var UMKEHR_MITTEL = 6;                 // Schwelle = Mittel der letzten 6
+  var HOECHSTZAHL = 120;                 // Notbremse: so viele Durchgänge höchstens je Block
+  var START_OHNE_VORWERT = -1;           // 10 % Kontrast, wenn es noch keine Schwelle gibt
+  var START_ZUSCHLAG = 0.3;              // Beginn beim Doppelten der letzten Schwelle
+
+  // Neue Treppe. vorwert: letzte Schwelle dieser Bedingung (log) oder null.
+  // Ohne Vorwert beginnt die Treppe mit einem Schnellstart: in doppelten Stufen
+  // abwärts bis zum ersten Fehler; diese Phase zählt nicht zu den Umkehrpunkten.
+  // Das ist eine Rechenhilfe, damit der allererste Block nicht 30 Durchgänge
+  // lang nur sehr deutliche Ziele zeigt.
+  function neueTreppe(vorwert) {
+    var hatVorwert = typeof vorwert === 'number' && isFinite(vorwert);
+    var start = hatVorwert ? vorwert + START_ZUSCHLAG : START_OHNE_VORWERT;
+    start = Math.min(OBERGRENZE, Math.max(UNTERGRENZE, start));
+    return {
+      logc: start,
+      schnellstart: !hatVorwert,
+      richtigInFolge: 0,
+      richtung: 0,        // -1 zuletzt blasser geworden, +1 zuletzt kräftiger
+      umkehr: [],         // log-Kontraste an den Umkehrpunkten
+      verlauf: [],        // je Durchgang [log-Kontrast, richtig 1/0]
+      fertig: false,
+      grund: null         // 'umkehr', 'untergrenze' oder 'hoechstzahl'
+    };
+  }
+
+  // Eine Antwort in die Treppe eintragen; ändert die Treppe.
+  function treppeAntwort(t, richtig) {
+    if (t.fertig) return t;
+    t.verlauf.push([Math.round(t.logc * 1000) / 1000, richtig ? 1 : 0]);
+    if (t.schnellstart) {
+      if (richtig) {
+        t.logc -= 2 * STUFE;
+      } else {
+        // Erster Fehler: ab hier gilt das normale Treppenverfahren.
+        t.schnellstart = false;
+        t.logc += STUFE;
+        t.richtung = +1;
+      }
+    } else if (richtig) {
+      t.richtigInFolge += 1;
+      if (t.richtigInFolge === 3) {
+        t.richtigInFolge = 0;
+        if (t.richtung === +1) t.umkehr.push(t.logc);
+        t.richtung = -1;
+        t.logc -= STUFE;
+      }
+    } else {
+      t.richtigInFolge = 0;
+      if (t.richtung === -1) t.umkehr.push(t.logc);
+      t.richtung = +1;
+      t.logc += STUFE;
+    }
+    // Rundungsfehler der Kommazahlen begrenzen.
+    t.logc = Math.round(t.logc * 1000) / 1000;
+    if (t.logc < UNTERGRENZE - 1e-9) {
+      // Die Untergrenze von 1 % beendet den Block (wie in der App-Studie).
+      t.logc = UNTERGRENZE;
+      t.fertig = true;
+      t.grund = 'untergrenze';
+    } else if (t.logc > OBERGRENZE) {
+      t.logc = OBERGRENZE;
+    }
+    if (!t.fertig && t.umkehr.length >= UMKEHR_ZIEL) {
+      t.fertig = true;
+      t.grund = 'umkehr';
+    }
+    if (!t.fertig && t.verlauf.length >= HOECHSTZAHL) {
+      t.fertig = true;
+      t.grund = 'hoechstzahl';
+    }
+    return t;
+  }
+
+  // Schwelle einer fertigen Treppe (log). Untergrenze erreicht -> -2.
+  // Notbremse ohne genug Umkehrpunkte -> Mittel der vorhandenen bzw. letzter Wert.
+  function schwelle(t) {
+    if (t.grund === 'untergrenze') return UNTERGRENZE;
+    var u = t.umkehr.slice(-UMKEHR_MITTEL);
+    if (u.length === 0) return t.logc;
+    var s = 0;
+    for (var i = 0; i < u.length; i++) s += u[i];
+    return Math.round((s / u.length) * 1000) / 1000;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Steigerung von Sitzung zu Sitzung
+  // ---------------------------------------------------------------------------
+
+  var FORTSCHRITT_GRENZE = -Math.log10(0.85); // 15 % besser = 0,0706 log
+  var MASKE_GRENZE = 0.1;                      // höchstens 1 Treppenstufe Maskenwirkung
+  var MASKE_GRENZE_KUERZESTE = 0.2;            // bei der kürzesten Pause 2 Treppenstufen
+  var MASKE_EINGANG_GRENZE = 0.2;              // Eingang: mehr als 2 Stufen -> Start bei 200 ms
+  var MASKE_ZURUECK = 0.4;                     // mehr als 4 Stufen nach einem Schritt -> zurück
+  var BUCHSTABENTEST_ABSTAND = 5;              // Buchstabentest alle 5 Trainingssitzungen
+  var MINDEST_SITZUNGEN = 25;
+
+  // Anfangszustand vor der ersten Sitzung.
+  function neuerZustand() {
+    return {
+      version: 1,
+      phase: 'eingang1',          // 'eingang1', 'eingang2', 'training'
+      sitzungen: 0,               // alle abgeschlossenen Sitzungen
+      trainingssitzungen: 0,      // nur die Trainingssitzungen
+      feinheitIdx: 0,
+      ausrichtungIdx: 0,          // 0..3 innerhalb eines Durchlaufs
+      sitzungImPaar: 0,           // 0 = erste, 1 = zweite Sitzung derselben Ausrichtung
+      abstandIdx: 0,
+      pauseIdx: PAUSE_EINGANG,
+      dauerIdx: 0,
+      durchlaufNr: 1,             // 1 oder 2 bei derselben Feinheit
+      paar: [],                   // Schwellen der Sitzungen des laufenden Paars
+      durchlaufFortschritt: [],   // je Paar: Fortschritt der 2. gegenüber der 1. Sitzung (log)
+      durchlaufUntergrenze: false,
+      nachSchritt: false,         // letzte Zeitentscheidung hat verkürzt
+      letzteMaskenwirkung: null,
+      zurueckKandidat: false,
+      feinsteFertig: false,       // Plateau auf der feinsten Stufe erreicht
+      schwellen: {},              // letzte Schwelle je Bedingung und Feinheit, für den Beginn
+      eingang: null,              // Ergebnisse der Eingangssitzungen
+      letztesDatum: null,         // Datum der letzten Sitzung (JJJJ-MM-TT)
+      buchstabentests: 0,
+      kalibrierung: null          // { mmProPunkt, gamma, grauHalb, hz, datum }
+    };
+  }
+
+  function schluessel(bedingung, feinheit) { return bedingung + '_' + feinheit; }
+
+  // Plan der nächsten Sitzung aus dem Zustand.
+  function naechsteSitzung(z) {
+    var plan = {
+      art: z.phase,
+      nr: z.sitzungen + 1,
+      trainingNr: z.phase === 'training' ? z.trainingssitzungen + 1 : null,
+      feinheit: FEINHEITEN[z.feinheitIdx],
+      ausrichtung: AUSRICHTUNGEN[z.ausrichtungIdx],
+      abstand: ABSTAENDE[z.abstandIdx],
+      pauseBilder: PAUSEN_BILDER[z.pauseIdx],
+      dauerBilder: DAUER_BILDER[z.dauerIdx],
+      bloecke: [],
+      buchstabentest: false
+    };
+    if (z.phase === 'eingang1') {
+      // Eingangssitzung 1: Schwelle "Ziel allein" bei vier Feinheiten, senkrechte
+      // Streifen, längste Darbietung; dazu der erste Buchstabentest.
+      plan.ausrichtung = 0;
+      plan.dauerBilder = DAUER_BILDER[0];
+      plan.bloecke = [2, 4, 6, 8].map(function (f) {
+        return { bedingung: 'ziel', feinheit: f, vorwert: null };
+      });
+      plan.buchstabentest = true;
+      return plan;
+    }
+    // Eingangssitzung 2 und Training: vier Blöcke bei einer Feinheit.
+    plan.bloecke = BEDINGUNGEN.map(function (b) {
+      var v = z.schwellen[schluessel(b, plan.feinheit)];
+      // Ohne eigenen Vorwert mit Maske/Flankern: vom Ziel allein ausgehen.
+      if (typeof v !== 'number') v = z.schwellen[schluessel('ziel', plan.feinheit)];
+      return { bedingung: b, feinheit: plan.feinheit, vorwert: typeof v === 'number' ? v : null };
+    });
+    if (z.phase === 'training' && (plan.trainingNr % BUCHSTABENTEST_ABSTAND === 0)) {
+      plan.buchstabentest = true;
+    }
+    return plan;
+  }
+
+  // Mittel einer Zahlenliste.
+  function mittel(a) {
+    if (!a.length) return null;
+    var s = 0;
+    for (var i = 0; i < a.length; i++) s += a[i];
+    return s / a.length;
+  }
+
+  // Maskenwirkung einer Sitzung: zwei Vergleiche (log), positiv = Maske stört.
+  function maskenvergleiche(s) {
+    return [s.maske - s.ziel, s.flanker_maske - s.flanker];
+  }
+
+  // Name einer Ausrichtung für Meldungen.
+  function ausrichtungName(grad) {
+    return { 0: 'senkrecht', 90: 'waagrecht', 45: 'schräg nach rechts', 135: 'schräg nach links' }[grad];
+  }
+  function ms(bilder) { return Math.round(bilder * 1000 / 60); }
+
+  // Eine Sitzung abschließen. ergebnis = { datum, schwellen: {bedingung -> log} bzw. bei
+  // Eingang 1 {feinheit -> log}, untergrenze: bool }. Gibt { zustand, meldungen } zurück;
+  // meldungen erklären in Alltagssprache, was sich für die nächste Sitzung ändert.
+  function sitzungAbschliessen(zAlt, plan, ergebnis) {
+    var z = JSON.parse(JSON.stringify(zAlt));
+    var m = [];
+    z.sitzungen += 1;
+    z.letztesDatum = ergebnis.datum;
+
+    if (plan.art === 'eingang1') {
+      var sw = ergebnis.schwellen;            // {2: log, 4: log, 6: log, 8: log}
+      [2, 4, 6, 8].forEach(function (f) { z.schwellen[schluessel('ziel', f)] = sw[f]; });
+      // Start bei der feinsten Stufe, deren Schwelle unter dem Doppelten der
+      // eigenen Schwelle bei 2 Streifenpaaren je Grad liegt.
+      var grenze = sw[2] + Math.log10(2);
+      var start = 2;
+      [4, 6, 8].forEach(function (f) { if (sw[f] < grenze) start = f; });
+      // Zwischen 4 und 6 kann eine Lücke liegen; die Regel nimmt die feinste, die passt.
+      z.feinheitIdx = FEINHEITEN.indexOf(start);
+      z.eingang = { schwellen: sw, startFeinheit: start };
+      z.phase = 'eingang2';
+      z.pauseIdx = PAUSE_EINGANG;
+      m.push('Du beginnst bei ' + start + ' Streifenpaaren je Grad: das ist die feinste Stufe, die du ' +
+        'noch nicht mehr als doppelt so schlecht siehst wie die gröbste.');
+      return { zustand: z, meldungen: m };
+    }
+
+    var s = ergebnis.schwellen;               // {ziel, flanker, maske, flanker_maske}
+    BEDINGUNGEN.forEach(function (b) { z.schwellen[schluessel(b, plan.feinheit)] = s[b]; });
+
+    if (plan.art === 'eingang2') {
+      var mw = mittel(maskenvergleiche(s));
+      z.eingang.maskenwirkung150 = mw;
+      if (mw > MASKE_EINGANG_GRENZE) {
+        z.pauseIdx = 1;
+        m.push('Die Maske stört dich bei 150 ms noch deutlich (' + stufen(mw) + '). ' +
+          'Das Training beginnt deshalb mit der längeren Pause von 200 ms.');
+      } else {
+        z.pauseIdx = PAUSE_EINGANG;
+        m.push('Die Maske stört dich bei 150 ms nur wenig (' + stufen(mw) + '). ' +
+          'Das Training beginnt bei 150 ms.');
+      }
+      z.phase = 'training';
+      z.ausrichtungIdx = 0;
+      z.sitzungImPaar = 0;
+      z.paar = [];
+      z.durchlaufFortschritt = [];
+      return { zustand: z, meldungen: m };
+    }
+
+    // --- Trainingssitzung ---
+    z.trainingssitzungen += 1;
+    z.paar.push(s);
+    if (ergebnis.untergrenze) z.durchlaufUntergrenze = true;
+
+    if (z.sitzungImPaar === 0) {
+      z.sitzungImPaar = 1;
+      m.push('Nächstes Mal: dieselbe Ausrichtung noch einmal.');
+      return { zustand: z, meldungen: m };
+    }
+
+    // Paar vollständig: Fortschritt und Maskenwirkung aus beiden Sitzungen.
+    var s1 = z.paar[0], s2 = z.paar[1];
+    var fortschritt = mittel(BEDINGUNGEN.map(function (b) { return s1[b] - s2[b]; }));
+    z.durchlaufFortschritt.push(fortschritt);
+    var maskenwirkung = mittel(maskenvergleiche(s1).concat(maskenvergleiche(s2)));
+    z.paar = [];
+    z.sitzungImPaar = 0;
+
+    var endeDurchlauf = z.ausrichtungIdx === AUSRICHTUNGEN.length - 1;
+    var feinheitGewechselt = false;
+
+    if (endeDurchlauf) {
+      // Entscheidung über die Feinheit: mittlerer Fortschritt der 2. gegenüber der
+      // 1. Sitzung derselben Ausrichtung, über alle vier Ausrichtungen.
+      var f = mittel(z.durchlaufFortschritt);
+      var prozent = Math.round((1 - Math.pow(10, -f)) * 100);
+      var weiter = f < FORTSCHRITT_GRENZE || z.durchlaufUntergrenze || z.durchlaufNr >= 2;
+      if (weiter) {
+        if (z.feinheitIdx < FEINHEITEN.length - 1) {
+          z.feinheitIdx += 1;
+          feinheitGewechselt = true;
+          m.push('Ein Durchlauf ist fertig. Fortschritt von Sitzung zu Sitzung im Mittel ' + prozent +
+            ' %. Ab jetzt feinere Streifen: ' + FEINHEITEN[z.feinheitIdx] + ' Streifenpaare je Grad.');
+        } else {
+          if (!z.feinsteFertig) {
+            m.push('Auf der feinsten Stufe bringt ein Durchlauf kaum noch Fortschritt (' + prozent +
+              ' %). Das ist das Plateau; ' + (z.trainingssitzungen >= MINDEST_SITZUNGEN ?
+              'du kannst das Training beenden oder weiterüben.' :
+              'übe bis mindestens ' + MINDEST_SITZUNGEN + ' Sitzungen weiter.'));
+          }
+          z.feinsteFertig = true;
+        }
+        z.durchlaufNr = 1;
+      } else {
+        z.durchlaufNr = 2;
+        m.push('Ein Durchlauf ist fertig. Fortschritt von Sitzung zu Sitzung im Mittel ' + prozent +
+          ' %, also noch deutlich. Noch ein Durchlauf bei derselben Feinheit.');
+      }
+      z.durchlaufFortschritt = [];
+      z.durchlaufUntergrenze = false;
+    }
+
+    // Entscheidung über die Zeiten (nur, wenn sich die Feinheit nicht geändert hat).
+    if (feinheitGewechselt) {
+      m.push('Die Zeiten bleiben diesmal gleich, weil sich immer nur eine Größe auf einmal ändert.');
+      z.nachSchritt = false;
+      z.zurueckKandidat = false;
+    } else {
+      var kuerzeste = z.pauseIdx === PAUSEN_BILDER.length - 1;
+      var grenze2 = kuerzeste ? MASKE_GRENZE_KUERZESTE : MASKE_GRENZE;
+      var text = 'Maskenwirkung der letzten zwei Sitzungen: ' + stufen(maskenwirkung) + '. ';
+      if (maskenwirkung <= grenze2 + 1e-9) {
+        if (!kuerzeste) {
+          z.pauseIdx += 1;
+          m.push(text + 'Die Maske darf jetzt früher kommen: Pause ' + ms(PAUSEN_BILDER[z.pauseIdx]) + ' ms.');
+          z.nachSchritt = true;
+        } else if (z.dauerIdx < DAUER_BILDER.length - 1) {
+          z.dauerIdx += 1;
+          z.pauseIdx = PAUSE_NEUSTART;
+          m.push(text + 'Die kürzeste Pause ist geschafft. Ab jetzt ist das Ziel kürzer zu sehen (' +
+            ms(DAUER_BILDER[z.dauerIdx]) + ' ms); die Pause beginnt wieder bei ' +
+            ms(PAUSEN_BILDER[z.pauseIdx]) + ' ms.');
+          z.nachSchritt = true;
+        } else {
+          m.push(text + 'Kürzeste Pause und kürzeste Darbietung sind erreicht.');
+          z.nachSchritt = false;
+        }
+        z.zurueckKandidat = false;
+      } else if (maskenwirkung > MASKE_ZURUECK && (z.nachSchritt || z.zurueckKandidat)) {
+        if (z.zurueckKandidat && maskenwirkung >= z.letzteMaskenwirkung - 1e-9 && z.pauseIdx > 0) {
+          z.pauseIdx -= 1;
+          z.zurueckKandidat = false;
+          m.push(text + 'Die Maske stört seit dem letzten Schritt stark und es wird nicht besser. ' +
+            'Eine Stufe zurück: Pause ' + ms(PAUSEN_BILDER[z.pauseIdx]) + ' ms.');
+        } else {
+          z.zurueckKandidat = true;
+          m.push(text + 'Die Maske stört seit dem letzten Schritt stark. Die Pause bleibt; wird es bis ' +
+            'zur nächsten Entscheidung nicht besser, geht es eine Stufe zurück.');
+        }
+        z.nachSchritt = false;
+      } else {
+        z.nachSchritt = false;
+        z.zurueckKandidat = false;
+        m.push(text + 'Die Pause bleibt bei ' + ms(PAUSEN_BILDER[z.pauseIdx]) + ' ms.');
+      }
+    }
+    z.letzteMaskenwirkung = maskenwirkung;
+
+    // Nächste Ausrichtung und nächster Abstand der Flanker.
+    z.ausrichtungIdx = (z.ausrichtungIdx + 1) % AUSRICHTUNGEN.length;
+    z.abstandIdx = (z.abstandIdx + 1) % ABSTAENDE.length;
+    m.push('Nächstes Mal: Streifen ' + ausrichtungName(AUSRICHTUNGEN[z.ausrichtungIdx]) +
+      ', Flanker im Abstand von ' + ABSTAENDE[z.abstandIdx] + ' Wellenlängen.');
+    return { zustand: z, meldungen: m };
+  }
+
+  // log-Unterschied in Treppenstufen, für Meldungen (eine Nachkommastelle).
+  function stufen(logwert) {
+    var zahl = Math.round(logwert / STUFE * 10) / 10;
+    return zahl.toString().replace('.', ',') + (zahl === 1 ? ' Treppenstufe' : ' Treppenstufen');
+  }
+
+  // Kontrast in Prozent aus dem log-Wert, für Anzeigen.
+  function prozent(logwert) {
+    var p = Math.pow(10, logwert) * 100;
+    return p >= 10 ? Math.round(p).toString() : (Math.round(p * 10) / 10).toString().replace('.', ',');
+  }
+
+  global.Logik = {
+    FEINHEITEN: FEINHEITEN, AUSRICHTUNGEN: AUSRICHTUNGEN, ABSTAENDE: ABSTAENDE,
+    PAUSEN_BILDER: PAUSEN_BILDER, DAUER_BILDER: DAUER_BILDER, BEDINGUNGEN: BEDINGUNGEN,
+    BEDINGUNG_NAME: BEDINGUNG_NAME, STUFE: STUFE, UNTERGRENZE: UNTERGRENZE, OBERGRENZE: OBERGRENZE,
+    MINDEST_SITZUNGEN: MINDEST_SITZUNGEN,
+    neueTreppe: neueTreppe, treppeAntwort: treppeAntwort, schwelle: schwelle,
+    neuerZustand: neuerZustand, naechsteSitzung: naechsteSitzung,
+    sitzungAbschliessen: sitzungAbschliessen,
+    ausrichtungName: ausrichtungName, ms: ms, stufen: stufen, prozent: prozent
+  };
+})(typeof window !== 'undefined' ? window : this);
+
+</script>
+<script>
+// ===== reize.js =====
+// Reize zeichnen und Durchgänge Bild für Bild abspielen.
+// Gezeichnet wird in echter Geräteauflösung (ein Canvas-Bildpunkt = ein Bildpunkt des
+// Bildschirms), damit feine Streifen nicht verwaschen werden.
+(function (global) {
+  'use strict';
+
+  var ABSTAND_MM = 400;          // Sehabstand
+  var HUELLE = 3.5;              // ein Fleck wird bis 3,5 σ gezeichnet (dort ist er praktisch null)
+  var FLANKER_KONTRAST = 0.6;    // wie in der App-Studie
+
+  // Zufallszahlen für das Zufallsmuster (schnell, Startwert je Bild neu).
+  function xorshift(saat) {
+    var x = saat | 0 || 2463534242;
+    return function () {
+      x ^= x << 13; x ^= x >>> 17; x ^= x << 5;
+      return (x >>> 0) / 4294967296;
+    };
+  }
+
+  // Graustufen aus der Helligkeitskennlinie: Helligkeit = (Grauwert/255)^gamma.
+  // Mittleres Grau v0 ist der ganzzahlige Grauwert nahe halber Helligkeit; so
+  // braucht der Hintergrund kein Zufallsmuster und passt genau zur Seitenfarbe.
+  function graustufen(gamma) {
+    var v0 = Math.round(255 * Math.pow(0.5, 1 / gamma));
+    var lm = Math.pow(v0 / 255, gamma);
+    // Umkehrtabelle: Helligkeit (0..1 in 65536 Schritten) -> Grauwert als Kommazahl.
+    var n = 65536, lut = new Float32Array(n);
+    for (var i = 0; i < n; i++) lut[i] = 255 * Math.pow(i / (n - 1), 1 / gamma);
+    return { gamma: gamma, v0: v0, lm: lm, lut: lut };
+  }
+
+  // Maße für eine Sitzung: Bildpunkte je Grad, Wellenlänge, Größe des Canvas.
+  function geometrie(kal, feinheit, abstandWellen) {
+    var dpr = global.devicePixelRatio || 1;
+    var mmJeGeraetepunkt = kal.mmProPunkt / dpr;
+    var gpJeGrad = ABSTAND_MM * Math.tan(Math.PI / 180) / mmJeGeraetepunkt;
+    var lambda = gpJeGrad / feinheit;           // Wellenlänge in Geräte-Bildpunkten
+    var sigma = lambda;                          // Breite der Hülle gleich der Wellenlänge
+    var r = Math.ceil(HUELLE * sigma);           // halbe Kantenlänge eines Flecks
+    var versatz = Math.round(abstandWellen * lambda);
+    var seite = 2 * (versatz + r) + 1;           // Canvas ist quadratisch
+    return { dpr: dpr, gpJeGrad: gpJeGrad, lambda: lambda, sigma: sigma, r: r, versatz: versatz, seite: seite };
+  }
+
+  // Vorlage eines Gabor-Flecks mit Kontrast 1 (Werte -1..1), Mitte im Feld.
+  // ausrichtung in Grad: 0 = senkrechte Streifen (Helligkeit wechselt entlang x).
+  function vorlage(g, ausrichtung) {
+    var w = 2 * g.r + 1, f = new Float32Array(w * w);
+    var th = ausrichtung * Math.PI / 180, c = Math.cos(th), s = Math.sin(th);
+    var k = 1 / (2 * g.sigma * g.sigma), om = 2 * Math.PI / g.lambda;
+    for (var y = -g.r; y <= g.r; y++) {
+      for (var x = -g.r; x <= g.r; x++) {
+        f[(y + g.r) * w + (x + g.r)] = Math.exp(-(x * x + y * y) * k) * Math.cos(om * (x * c + y * s));
+      }
+    }
+    return { w: w, f: f };
+  }
+
+  // Eine Sitzungs-Zeichenstelle: alles, was sich innerhalb eines Blocks nicht ändert.
+  function zeichner(canvas, kal, feinheit, ausrichtung, abstandWellen) {
+    var g = geometrie(kal, feinheit, abstandWellen);
+    var gs = graustufen(kal.gamma);
+    var v = vorlage(g, ausrichtung);
+    var th = ausrichtung * Math.PI / 180;
+    // Flanker liegen in Verlängerung der Streifen, also quer zur Wechselrichtung.
+    var fx = Math.round(-Math.sin(th) * g.versatz), fy = Math.round(Math.cos(th) * g.versatz);
+    var mitte = (g.seite - 1) / 2;
+    canvas.width = g.seite; canvas.height = g.seite;
+    canvas.style.width = (g.seite / g.dpr) + 'px';
+    canvas.style.height = (g.seite / g.dpr) + 'px';
+    var ctx = canvas.getContext('2d', { alpha: false });
+    ctx.imageSmoothingEnabled = false;
+    var grauText = 'rgb(' + gs.v0 + ',' + gs.v0 + ',' + gs.v0 + ')';
+
+    // Bild mit Ziel (Kontrast cz) und Flankern (Kontrast cf) als eigenes Canvas.
+    function bild(cz, cf, saat) {
+      var n = g.seite, summe = new Float32Array(n * n), beruehrt = new Uint8Array(n * n);
+      function addiere(mx, my, kon) {
+        if (!kon) return;
+        for (var y = 0; y < v.w; y++) {
+          var zy = my - g.r + y; if (zy < 0 || zy >= n) continue;
+          for (var x = 0; x < v.w; x++) {
+            var zx = mx - g.r + x; if (zx < 0 || zx >= n) continue;
+            var i = zy * n + zx;
+            summe[i] += kon * v.f[y * v.w + x];
+            beruehrt[i] = 1;
+          }
+        }
+      }
+      addiere(mitte, mitte, cz);
+      addiere(mitte + fx, mitte + fy, cf);
+      addiere(mitte - fx, mitte - fy, cf);
+      var off = document.createElement('canvas');
+      off.width = n; off.height = n;
+      var octx = off.getContext('2d', { alpha: false });
+      var img = octx.createImageData(n, n), d = img.data, zufall = xorshift(saat);
+      for (var i = 0; i < n * n; i++) {
+        var wert = gs.v0;
+        if (beruehrt[i]) {
+          // Helligkeit = mittlere Helligkeit * (1 + Summe der Flecken), dann Grauwert
+          // über die Kennlinie; das Zufallsmuster rundet zufällig auf oder ab.
+          var l = gs.lm * (1 + summe[i]);
+          if (l < 0) l = 0; else if (l > 1) l = 1;
+          var vf = gs.lut[Math.round(l * 65535)];
+          var unten = Math.floor(vf);
+          wert = unten + (zufall() < vf - unten ? 1 : 0);
+          if (wert > 255) wert = 255;
+        }
+        var j = i * 4;
+        d[j] = d[j + 1] = d[j + 2] = wert; d[j + 3] = 255;
+      }
+      octx.putImageData(img, 0, 0);
+      return off;
+    }
+
+    // Zeichnet einen Zustand: null = nur Grau, sonst ein vorbereitetes Bild.
+    function zeige(b, ring) {
+      if (b) ctx.drawImage(b, 0, 0);
+      else { ctx.fillStyle = grauText; ctx.fillRect(0, 0, g.seite, g.seite); }
+      if (ring) {
+        // Fixierkreis: weißer Ring um die Stelle des Ziels (wie in der Abbildung des Zusatzmaterials).
+        ctx.strokeStyle = ring === true ? '#fff' : ring;
+        ctx.lineWidth = Math.max(2, g.dpr * 1.5);
+        ctx.beginPath(); ctx.arc(mitte + 0.5, mitte + 0.5, Math.max(g.sigma * 1.2, 8 * g.dpr), 0, 2 * Math.PI); ctx.stroke();
+      }
+    }
+
+    return { g: g, gs: gs, grauText: grauText, bild: bild, zeige: zeige, flankerKontrast: FLANKER_KONTRAST };
+  }
+
+  // Spielt eine Folge von Zuständen ab, gezählt in Bildern des Bildschirms.
+  // folge: [{ bild: Canvas|null, ring: bool|Farbe, bilder: Anzahl, marke: 0|1|null }]
+  // fertig({ dauernMs: gemessene Dauer je Abschnitt, zeitfehler: bool })
+  // markieren(n): wird aufgerufen, wenn die Markierung wechselt (0 = erster Abschnitt,
+  // 1 = zweiter, null = keiner); im selben Bildwechsel wie der Reiz.
+  // Jeder Aufruf von requestAnimationFrame entspricht einem gezeigten Bild. Was in einem
+  // Aufruf gezeichnet wird, erscheint mit dem nächsten Bildwechsel.
+  function abspielen(z, folge, hz, fertig, markieren) {
+    var i = -1, rest = 0, starts = [], marke = null;
+    var bildMs = 1000 / hz;
+    function schritt(zeit) {
+      if (rest <= 0) {
+        i += 1;
+        starts.push(zeit);
+        if (i >= folge.length) { auswerten(); return; }
+        z.zeige(folge[i].bild, folge[i].ring);
+        var neu = folge[i].marke === undefined ? null : folge[i].marke;
+        if (markieren && neu !== marke) { marke = neu; markieren(neu); }
+        rest = folge[i].bilder;
+      }
+      rest -= 1;
+      requestAnimationFrame(schritt);
+    }
+    function auswerten() {
+      var dauern = [], fehler = false;
+      for (var k = 0; k < folge.length; k++) {
+        var d = starts[k + 1] - starts[k];
+        dauern.push(Math.round(d * 10) / 10);
+        // Ein Abschnitt, der mehr als ein halbes Bild länger oder kürzer lief als geplant,
+        // zählt als Zeitfehler (z. B. ein ausgelassenes Bild).
+        if (folge[k].wichtig && Math.abs(d - folge[k].bilder * bildMs) > 0.5 * bildMs) fehler = true;
+      }
+      fertig({ dauernMs: dauern, zeitfehler: fehler });
+    }
+    requestAnimationFrame(schritt);
+  }
+
+  // Baut die Folge eines Durchgangs für eine Bedingung.
+  // teile: { ziel: Canvas mit Ziel (und ggf. Flankern), ohne: Canvas ohne Ziel bzw. null,
+  //          maske: Canvas mit den Masken-Flankern oder null }
+  // zeiten in Bildern: { dauer, pause, ring, leer, zwischen, zitterMax, nachlauf }
+  // zielAbschnitt: 0 oder 1
+  // Jeder Abschnitt trägt seine Markierung (marke 0 bzw. 1) von der Leerzeit davor bis
+  // "nachlauf" Bilder nach dem Reiz bzw. der Maske. So ist klar, zu welchem Abschnitt ein
+  // gesehener Fleck gehört, ohne dass die Markierung verrät, in welchem das Ziel ist; der
+  // genaue Zeitpunkt des Reizes innerhalb des Abschnitts bleibt durch die Zufallspause offen.
+  function folgeDurchgang(teile, zeiten, zielAbschnitt, zufall) {
+    var nachlauf = Math.min(zeiten.nachlauf || 0, zeiten.zwischen);
+    var f = [{ bild: null, ring: true, bilder: zeiten.ring, marke: null }];
+    for (var a = 0; a < 2; a++) {
+      var zittern = Math.floor(zufall() * (zeiten.zitterMax + 1));
+      f.push({ bild: null, ring: false, bilder: zeiten.leer + zittern, marke: a });
+      f.push({ bild: a === zielAbschnitt ? teile.ziel : teile.ohne, ring: false, bilder: zeiten.dauer, wichtig: true, marke: a });
+      if (teile.maske) {
+        f.push({ bild: null, ring: false, bilder: zeiten.pause, wichtig: true, marke: a });
+        f.push({ bild: teile.maske, ring: false, bilder: zeiten.dauer, wichtig: true, marke: a });
+      }
+      if (nachlauf > 0) f.push({ bild: null, ring: false, bilder: nachlauf, marke: a });
+      if (a === 0 && zeiten.zwischen > nachlauf) f.push({ bild: null, ring: false, bilder: zeiten.zwischen - nachlauf, marke: null });
+    }
+    f.push({ bild: null, ring: false, bilder: 1, marke: null });
+    return f;
+  }
+
+  global.Reize = {
+    ABSTAND_MM: ABSTAND_MM, FLANKER_KONTRAST: FLANKER_KONTRAST,
+    graustufen: graustufen, geometrie: geometrie, vorlage: vorlage,
+    zeichner: zeichner, abspielen: abspielen, folgeDurchgang: folgeDurchgang, xorshift: xorshift
+  };
+})(typeof window !== 'undefined' ? window : this);
+
+</script>
+<script>
+// ===== kalibrierung.js =====
+/*
+ * kalibrierung.js – Einrichtung des Bildschirms für das Sehtraining
+ *
+ * Vier Teile, jeder startet mit einer eigenen Funktion an window.Kalibrierung:
+ *
+ *   groesse(container, vorgabeMmProPunkt, fertig)
+ *       Erst eine Anleitung, dann wird eine Karte im Scheckkartenformat (Normgröße
+ *       85,60 × 53,98 mm) auf den Bildschirm gelegt; der Nutzer stellt ein Rechteck auf
+ *       die Länge der Karte ein. Ergebnis: Millimeter je CSS-Pixel (kurz „Punkt“), oder
+ *       null bei „Überspringen“.
+ *
+ *   kennlinie(container, fertig)
+ *       Findet den Grauwert, der halb so hell leuchtet wie Weiß. Links ein Feld aus
+ *       abwechselnd einem Geräte-Bildpunkt Weiß und einem Schwarz (im Mittel genau
+ *       halbe Helligkeit), rechts eine graue Fläche. Daraus folgt die Kennlinie
+ *       Helligkeit = (Grauwert / 255) ^ gamma. Ergebnis: { gamma, grauHalb } oder null.
+ *
+ *   bildtakt(dauerMs, fertig)
+ *       Misst ohne Oberfläche, wie oft der Browser pro Sekunde ein neues Bild
+ *       zeichnen darf (requestAnimationFrame). Ergebnis:
+ *       { hz, anteilAusgelassen, anzahl, medianMs }.
+ *
+ *   pruefliste(container, fertig)
+ *       Liste der iPhone-Einstellungen zum Abhaken. fertig(true), wenn alles
+ *       abgehakt ist, fertig(false) bei „Überspringen“.
+ *
+ * Reine Funktionen (ohne DOM, mit jsc testbar): gammaAusGrau, mmProPunktAusBreite
+ * sowie die Hilfsfunktionen mit Unterstrich (_auswertungBildtakt usw.).
+ *
+ * Das Modul lässt sich ohne DOM laden; das DOM wird erst in den Startfunktionen
+ * benutzt. Eigene Stile werden einmalig eingefügt, alle Klassen beginnen mit „kal-“.
+ * Zeichen außerhalb von ASCII stehen in Zeichenketten als \u-Schreibweise, damit die
+ * Datei auch bei falsch eingestellter Zeichenkodierung der Seite richtig ankommt.
+ */
+(function (global) {
+  'use strict';
+
+  // ======================================================================
+  // Festwerte
+  // ======================================================================
+
+  // Bankkarte nach ISO/IEC 7810 ID-1: Seiten und Eckenradius in Millimetern.
+  var KARTE_LANG_MM = 85.60;
+  var KARTE_KURZ_MM = 53.98;
+  var KARTE_ECKE_MM = 3.18;
+
+  // Millimeter je CSS-Pixel beim iPhone 12 Pro (390 Punkte = 64,6 mm).
+  var VORGABE_MM_PRO_PUNKT = 0.1657;
+
+  // Rand um das Rechteck im Größenabgleich (CSS-Pixel) und Grenzen der Länge.
+  var KARTE_RAND_PUNKTE = 16;
+  var KARTE_BREITE_MIN = 80;
+  var KARTE_BREITE_MAX = 3000;
+
+  // Helligkeitskennlinie.
+  var GRAU_START = 186;             // Startwert der ersten Einstellung
+  var GRAU_ZUFALL_MIN = 160;        // Bereich für den Zufallsstart der Wiederholung
+  var GRAU_ZUFALL_MAX = 215;
+  var GRAU_MIN = 20;                // Grenzen der Einstellung (255 wäre nicht auswertbar)
+  var GRAU_MAX = 250;
+  var GAMMA_MIN = 1.6;              // Bereich, den wir als plausibel ansehen
+  var GAMMA_MAX = 3.0;
+  var STREUUNG_WARNUNG = 12;        // so weit dürfen die beiden Einstellungen auseinanderliegen
+  var FELD_RAND_PUNKTE = 8;         // schwarzer Rand um die beiden Felder (CSS-Pixel)
+  var FELD_HOEHE_MIN_PUNKTE = 245;  // 4 cm bei 0,1657 mm je Punkt sind 241 Punkte
+  var FELD_HOEHE_MAX_PUNKTE = 420;
+
+  // Bildtakt.
+  var BILDTAKT_VORGABE_MS = 2000;
+  var BILDTAKT_VERWERFEN = 10;      // die ersten Abstände gelten als Anlaufen
+  var BILDTAKT_AUSLASS_FAKTOR = 1.5;
+
+  // Die Punkte der Prüfliste: Titel und Weg durch die iPhone-Einstellungen.
+  var PRUEFPUNKTE = [
+    { titel: 'Automatische Helligkeit aus',
+      detail: 'Einstellungen \u2192 Bedienungshilfen \u2192 Anzeige & Textgr\u00f6\u00dfe \u2192 ganz unten' },
+    { titel: 'True Tone aus und Night Shift aus',
+      detail: 'Einstellungen \u2192 Anzeige & Helligkeit' },
+    { titel: 'Anzeigezoom auf \u201eStandard\u201c',
+      detail: 'Einstellungen \u2192 Anzeige & Helligkeit \u2192 Anzeigezoom' },
+    { titel: 'Stromsparmodus aus',
+      detail: 'Einstellungen \u2192 Batterie' },
+    { titel: 'Helligkeit ganz hoch',
+      detail: 'Kontrollzentrum' },
+    { titel: 'Raum abgedunkelt, nur das iPhone leuchtet',
+      detail: '' },
+    { titel: 'Ausrichtungssperre im Hochformat an',
+      detail: 'Kontrollzentrum' },
+    { titel: 'Beim Training: keine Lesebrille, Abstand 40 cm',
+      detail: 'z. B. mit einer 40 cm langen Schnur zwischen Kinn und iPhone pr\u00fcfen; f\u00fcr die Einrichtung ist jede Brille erlaubt' }
+  ];
+
+  // ======================================================================
+  // Reine Funktionen (kein DOM)
+  // ======================================================================
+
+  // Exponent der Kennlinie Helligkeit = (Grauwert / 255) ^ gamma, wenn der Grauwert
+  // „grauHalb“ halb so hell leuchtet wie Weiß (255): 0,5 = (grauHalb / 255) ^ gamma.
+  // Außerhalb von 0 < grauHalb < 255 gibt es keine Lösung (NaN).
+  function gammaAusGrau(grauHalb) {
+    if (!(grauHalb > 0 && grauHalb < 255)) return NaN;
+    return Math.log(0.5) / Math.log(grauHalb / 255);
+  }
+
+  // Millimeter je CSS-Pixel aus der Länge der langen Kante der auf die Karte
+  // eingestellten Fläche in CSS-Pixeln (bei quer liegendem Rechteck ist das die Breite).
+  function mmProPunktAusBreite(breitePunkte) {
+    return KARTE_LANG_MM / breitePunkte;
+  }
+
+  // Maße des Kartenrechtecks in CSS-Pixeln. „breite“ ist immer die lange Kante der
+  // Karte; hochkant steht sie senkrecht (dann ist die Breite des Rechtecks die kurze Kante).
+  function _kartenmasse(breite, hochkant) {
+    var kurz = breite * KARTE_KURZ_MM / KARTE_LANG_MM;
+    return hochkant ? { w: kurz, h: breite } : { w: breite, h: kurz };
+  }
+
+  // Muss das Rechteck hochkant gezeigt werden? Ja, wenn es quer nicht in den
+  // verfügbaren Platz (CSS-Pixel) passt.
+  function _hochkantNoetig(breite, platzB, platzH) {
+    var m = _kartenmasse(breite, false);
+    return !(m.w <= platzB && m.h <= platzH);
+  }
+
+  // Median einer Zahlenliste (Kopie wird sortiert; leere Liste: NaN).
+  function _median(werte) {
+    var n = werte.length;
+    if (n === 0) return NaN;
+    var s = werte.slice().sort(function (a, b) { return a - b; });
+    var mitte = Math.floor(n / 2);
+    return (n % 2 === 1) ? s[mitte] : (s[mitte - 1] + s[mitte]) / 2;
+  }
+
+  // Aus den Zeitstempeln aufeinanderfolgender Bilder die Abstände bilden und die
+  // ersten „verwerfen“ Abstände weglassen (Anlaufen).
+  function _abstaendeAusZeiten(zeitenMs, verwerfen) {
+    var abstaende = [];
+    for (var i = 1; i < zeitenMs.length; i++) {
+      abstaende.push(zeitenMs[i] - zeitenMs[i - 1]);
+    }
+    return abstaende.slice(verwerfen || 0);
+  }
+
+  // Auswertung der Abstände zwischen Bildern (in Millisekunden, Anlaufen schon
+  // entfernt): Median, daraus die Bildrate, und der Anteil der Abstände, die länger
+  // als 1,5-mal der Median dauerten (= ein Bild wurde ausgelassen).
+  function _auswertungBildtakt(abstaendeMs) {
+    var n = abstaendeMs.length;
+    if (n === 0) {
+      return { hz: null, anteilAusgelassen: null, anzahl: 0, medianMs: null };
+    }
+    var median = _median(abstaendeMs);
+    var lang = 0;
+    for (var i = 0; i < n; i++) {
+      if (abstaendeMs[i] > BILDTAKT_AUSLASS_FAKTOR * median) lang++;
+    }
+    var hz = (median > 0) ? Math.round(1000 / median * 10) / 10 : null;
+    return { hz: hz, anteilAusgelassen: lang / n, anzahl: n, medianMs: median };
+  }
+
+  // Zufälliger Startgrauwert für die Wiederholung (ganze Zahl von 160 bis 215).
+  // „zufall“ liefert Zahlen von 0 (einschließlich) bis 1 (ausschließlich), z. B. Math.random.
+  function _zufallsStart(zufall) {
+    var spanne = GRAU_ZUFALL_MAX - GRAU_ZUFALL_MIN + 1;
+    var g = GRAU_ZUFALL_MIN + Math.floor(zufall() * spanne);
+    return Math.min(GRAU_ZUFALL_MAX, Math.max(GRAU_ZUFALL_MIN, g));
+  }
+
+  // Ergebnis aus den eingestellten Grauwerten: Mittelwert, Kennlinie, Plausibilität
+  // und Streuung (Abstand zwischen der kleinsten und der größten Einstellung).
+  function _ergebnisKennlinie(werte) {
+    var summe = 0;
+    for (var i = 0; i < werte.length; i++) summe += werte[i];
+    var grauHalb = summe / werte.length;
+    var gamma = gammaAusGrau(grauHalb);
+    var streuung = Math.max.apply(null, werte) - Math.min.apply(null, werte);
+    // Die Grenzen zählen mit; die kleine Toleranz fängt Rundungsfehler der
+    // Gleitkommazahlen genau auf der Grenze ab.
+    var plausibel = isFinite(gamma) && gamma >= GAMMA_MIN - 1e-9 && gamma <= GAMMA_MAX + 1e-9;
+    return { grauHalb: grauHalb, gamma: gamma, plausibel: plausibel, streuung: streuung };
+  }
+
+  // Verschiebung (CSS-Pixel), die eine Position auf einen ganzen Geräte-Bildpunkt
+  // legt; 0, wenn sie schon (fast) darauf liegt.
+  function _korrekturZumGeraetepunkt(positionCss, dpr) {
+    var geraet = positionCss * dpr;
+    var diff = Math.round(geraet) - geraet;
+    return (Math.abs(diff) < 0.02) ? 0 : diff / dpr;
+  }
+
+  // Zahl mit deutschem Komma.
+  function _zahlDe(x, nachkommastellen) {
+    return x.toFixed(nachkommastellen).replace('.', ',');
+  }
+
+  // ======================================================================
+  // Stile (einmalig eingefügt)
+  // ======================================================================
+
+  var STIL = [
+    '.kal-wurzel{position:absolute;top:0;right:0;bottom:0;left:0;box-sizing:border-box;display:flex;flex-direction:column;',
+    'background:var(--hg,#000);color:var(--text,#eee);',
+    'font-family:var(--schrift,-apple-system,BlinkMacSystemFont,"Helvetica Neue",Helvetica,Arial,sans-serif);font-size:1rem;line-height:1.4;',
+    'overflow:hidden;overscroll-behavior:none;text-align:left;',
+    '-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}',
+    '.kal-wurzel *{box-sizing:border-box}',
+    '.kal-schwarz{background:#000}',
+    '.kal-kopf{flex:0 0 auto;padding:calc(8px + env(safe-area-inset-top,0px)) 16px 4px}',
+    '.kal-titel{margin:0 0 8px;font-size:1.2rem;font-weight:700;line-height:1.2}',
+    '.kal-text{margin:0 0 6px;font-size:1rem;line-height:1.35}',
+    '.kal-leise{opacity:.8;font-size:.85rem}',
+    '.kal-warnung{color:#ffb454;font-weight:600}',
+    '.kal-buehne{flex:1 1 auto;min-height:0;position:relative;display:flex;align-items:center;justify-content:center}',
+    '.kal-fueller{flex:1 1 auto}',
+    // Lesetext (Anleitung, Ergebnis): darf länger sein als der Bildschirm und wird dann geschoben
+    '.kal-lesen{flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;',
+    'padding:calc(12px + env(safe-area-inset-top,0px)) 16px 8px}',
+    '.kal-lesen .kal-text{margin:0 0 14px}',
+    '.kal-schritte{margin:0 0 14px;padding-left:1.4em}',
+    '.kal-schritte li{margin:0 0 10px}',
+    '.kal-leiste{flex:0 0 auto;display:flex;flex-wrap:wrap;justify-content:center;gap:6px;',
+    'padding:6px 8px calc(8px + env(safe-area-inset-bottom,0px))}',
+    '.kal-umbruch{flex:0 0 100%;height:0}',
+    '.kal-knopf{min-width:52px;min-height:52px;padding:0 12px;border:0;border-radius:12px;',
+    'background:var(--knopf-hg,#333);color:var(--knopf-text,#fff);font-family:inherit;font-size:1rem;line-height:1.1;',
+    'text-align:center;touch-action:manipulation;cursor:pointer;-webkit-appearance:none;appearance:none}',
+    '.kal-knopf:active{filter:brightness(1.35)}',
+    '.kal-knopf[disabled]{opacity:.35;cursor:default}',
+    '.kal-knopf-haupt{box-shadow:inset 0 0 0 2px var(--text,#eee);font-weight:700}',
+    '.kal-knopf-gross{min-height:60px}',
+    // Ansichten mit Messfläche (Rechteck, Helligkeitsfelder): feste Schriftgröße, unabhängig von der
+    // gewählten Schrift der Seite, damit Fläche und Knöpfe immer ganz auf den Bildschirm passen
+    '.kal-fest .kal-titel{font-size:26px}',
+    '.kal-fest .kal-text{font-size:22px}',
+    '.kal-fest .kal-knopf{font-size:22px}',
+    // Größenabgleich: das Kartenrechteck (Größe wird im Skript gesetzt)
+    '.kal-karte{flex:0 0 auto;position:relative;border:2px solid var(--text,#eee);',
+    'display:flex;align-items:center;justify-content:center}',
+    '.kal-karte-text{padding:8px;text-align:center;font-size:.75rem;line-height:1.5;opacity:.5}',
+    // Helligkeitskennlinie: Canvas ohne Skalierung
+    '.kal-canvas{display:block;flex:0 0 auto;touch-action:none;image-rendering:pixelated}',
+    // Prüfliste
+    '.kal-pl-liste{flex:1 1 auto;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:0 16px}',
+    '.kal-pl-zeile{position:relative;display:flex;align-items:flex-start;gap:14px;min-height:56px;padding:12px 0;',
+    'border-bottom:1px solid rgba(128,128,128,.35);cursor:pointer}',
+    '.kal-pl-eingabe{position:absolute;opacity:0;width:1px;height:1px;margin:0;pointer-events:none}',
+    '.kal-pl-kasten{flex:0 0 auto;width:40px;height:40px;border:2px solid var(--text,#eee);border-radius:8px;',
+    'display:flex;align-items:center;justify-content:center;font-size:26px;line-height:1;color:transparent}',
+    '.kal-pl-eingabe:checked + .kal-pl-kasten{background:var(--text,#eee);color:var(--hg,#000)}',
+    '.kal-pl-text{flex:1 1 auto;min-width:0;padding-top:1px}',
+    '.kal-pl-kopf{padding:calc(12px + env(safe-area-inset-top,0px)) 0 4px}',
+    '.kal-pl-titel{font-size:1rem;font-weight:700}',
+    '.kal-pl-detail{margin-top:4px;font-size:.85rem;opacity:.8}'
+  ].join('');
+
+  function stilEinfuegen() {
+    var d = global.document;
+    if (d.getElementById('kal-stil')) return;
+    var s = d.createElement('style');
+    s.id = 'kal-stil';
+    s.textContent = STIL;
+    (d.head || d.documentElement).appendChild(s);
+  }
+
+  // ======================================================================
+  // Kleine Helfer für das DOM
+  // ======================================================================
+
+  function el(tag, klasse, text) {
+    var e = global.document.createElement(tag);
+    if (klasse) e.className = klasse;
+    if (text !== undefined && text !== null) e.textContent = text;
+    return e;
+  }
+
+  function knopf(text, beiKlick, zusatzKlasse) {
+    var b = el('button', 'kal-knopf' + (zusatzKlasse ? ' ' + zusatzKlasse : ''), text);
+    b.type = 'button';
+    b.addEventListener('click', beiKlick);
+    return b;
+  }
+
+  // Erzwingt in einer Knopfleiste einen Zeilenumbruch an dieser Stelle.
+  function umbruch() {
+    return el('div', 'kal-umbruch');
+  }
+
+  function leeren(knoten) {
+    while (knoten.firstChild) knoten.removeChild(knoten.firstChild);
+  }
+
+  // Bereitet das übergebene DIV vor: Stile, leeren, Mindestgröße, und legt darin eine
+  // eigene Fläche („Wurzel“) an, die das DIV ganz ausfüllt und die Bildschirmteile
+  // senkrecht anordnet (Kopf, Bühne, Knopfleiste). Die Anordnung hängt so nicht davon ab,
+  // wie die einbindende Seite das DIV selbst anzeigt (display, Größe per Stilregel).
+  // Gibt die Wurzel zurück; alle Ansichten werden in sie hineingebaut.
+  function vorbereiten(container) {
+    stilEinfuegen();
+    leeren(container);
+    if (global.getComputedStyle(container).position === 'static') {
+      container.style.position = 'relative';
+    }
+    // Hat das DIV (noch) keine Höhe, füllen wir wenigstens das Fenster.
+    if (container.clientHeight < 50) {
+      container.style.height = global.innerHeight + 'px';
+    }
+    var wurzel = el('div', 'kal-wurzel');
+    container.appendChild(wurzel);
+    return wurzel;
+  }
+
+  // ======================================================================
+  // 1. Größenabgleich
+  // ======================================================================
+
+  function groesse(container, vorgabeMmProPunkt, fertig) {
+    var wurzel = vorbereiten(container);
+
+    var vorgabe = (isFinite(vorgabeMmProPunkt) && vorgabeMmProPunkt > 0)
+      ? vorgabeMmProPunkt : VORGABE_MM_PRO_PUNKT;
+    var breite = KARTE_LANG_MM / vorgabe;   // lange Kante der Karte in CSS-Pixeln
+    var hochkant = false;
+    var abgeschlossen = false;
+    var buehne = null, karte = null, karteZeile2 = null;   // erst in der Ansicht mit dem Rechteck
+
+    function beenden(ergebnis) {
+      if (abgeschlossen) return;
+      abgeschlossen = true;
+      global.removeEventListener('resize', beiGroesse);
+      leeren(container);
+      if (typeof fertig === 'function') fertig(ergebnis);
+    }
+
+    // --- Ansicht 1: Anleitung (Zweck und Vorgehen; hier ist Platz für großen Text) ---
+    function zeigeAnleitung() {
+      leeren(wurzel);
+      wurzel.classList.remove('kal-fest');
+      var lesen = el('div', 'kal-lesen');
+      lesen.appendChild(el('h2', 'kal-titel', 'Schritt 2 von 4: Gr\u00f6\u00dfe'));
+      lesen.appendChild(el('p', 'kal-text',
+        'Die Seite muss wissen, wie gro\u00df ein Millimeter auf deinem Bildschirm ist. Nur dann haben ' +
+        'die Streifen im Training und die Buchstaben im Test die richtige Gr\u00f6\u00dfe.'));
+      lesen.appendChild(el('p', 'kal-text',
+        'Du brauchst eine Karte im Scheckkartenformat, zum Beispiel Bankkarte, Personalausweis, ' +
+        'F\u00fchrerschein oder Krankenkassenkarte.'));
+      var ol = el('ol', 'kal-schritte');
+      ol.appendChild(el('li', null, 'Leg die Karte hochkant auf das Rechteck, das gleich erscheint.'));
+      ol.appendChild(el('li', null, 'Mach das Rechteck mit \u201e\u2212\u201c und \u201e+\u201c genau so lang wie die Karte. ' +
+        '\u201e\u2212\u2212\u201c und \u201e++\u201c \u00e4ndern in gr\u00f6\u00dferen Stufen.'));
+      ol.appendChild(el('li', null, 'Tippe auf \u201ePasst\u201c.'));
+      lesen.appendChild(ol);
+      lesen.appendChild(el('p', 'kal-text kal-leise',
+        'F\u00fcr das iPhone 12 Pro ist die Gr\u00f6\u00dfe schon voreingestellt. Dann pr\u00fcfst du nur, ob es passt.'));
+      wurzel.appendChild(lesen);
+      var leiste = el('div', 'kal-leiste');
+      leiste.appendChild(knopf('\u00dcberspringen', function () { beenden(null); }));
+      leiste.appendChild(knopf('Los', zeigeRechteck, 'kal-knopf-haupt'));
+      wurzel.appendChild(leiste);
+    }
+
+    // --- Ansicht 2: das Rechteck ---
+    // Bewusst knapp gehalten (eine Zeile Text, eine Reihe Knöpfe), damit das hochkant
+    // stehende Rechteck (etwa 517 Punkte hoch) auch in Safari mit eingeblendeten Leisten
+    // (iPhone 12 Pro: etwa 664 Punkte Höhe) ganz sichtbar bleibt. Abbrechen gibt es hier
+    // nicht: „Passt“ ohne Änderung behält den bisherigen Wert.
+    function zeigeRechteck() {
+      leeren(wurzel);
+      wurzel.classList.add('kal-fest');
+      var kopf = el('div', 'kal-kopf');
+      kopf.appendChild(el('p', 'kal-text', 'Rechteck so lang wie die Karte'));
+
+      buehne = el('div', 'kal-buehne');
+      karte = el('div', 'kal-karte');
+      var karteText = el('div', 'kal-karte-text');
+      karteText.appendChild(el('div', null, 'Karte hier auflegen'));
+      karteZeile2 = el('div');           // Länge in Punkten und Millimeter je Punkt
+      karteText.appendChild(karteZeile2);
+      karte.appendChild(karteText);
+      buehne.appendChild(karte);
+
+      var leiste = el('div', 'kal-leiste');
+      leiste.appendChild(knopf('\u2212\u2212', function () { aendern(-10); }));
+      leiste.appendChild(knopf('\u2212', function () { aendern(-1); }));
+      leiste.appendChild(knopf('+', function () { aendern(1); }));
+      leiste.appendChild(knopf('++', function () { aendern(10); }));
+      leiste.appendChild(knopf('Passt', function () {
+        beenden(mmProPunktAusBreite(breite));
+      }, 'kal-knopf-haupt'));
+
+      wurzel.appendChild(kopf);
+      wurzel.appendChild(buehne);
+      wurzel.appendChild(leiste);
+      global.addEventListener('resize', beiGroesse);
+      beiGroesse();
+    }
+
+    // --- Verhalten ---
+    function aendern(schritt) {
+      breite = Math.min(KARTE_BREITE_MAX, Math.max(KARTE_BREITE_MIN, breite + schritt));
+      anzeigen();
+    }
+
+    // Quer oder hochkant, je nach verfügbarem Platz auf der Bühne.
+    function ausrichtungWaehlen() {
+      var platzB = buehne.clientWidth - 2 * KARTE_RAND_PUNKTE;
+      var platzH = buehne.clientHeight - 2 * KARTE_RAND_PUNKTE;
+      if (buehne.clientWidth === 0 || buehne.clientHeight === 0) {
+        platzB = global.innerWidth - 2 * KARTE_RAND_PUNKTE;
+        platzH = global.innerHeight - 220;
+      }
+      hochkant = _hochkantNoetig(breite, platzB, platzH);
+    }
+
+    function anzeigen() {
+      var m = _kartenmasse(breite, hochkant);
+      karte.style.width = m.w + 'px';
+      karte.style.height = m.h + 'px';
+      karte.style.borderRadius = (breite * KARTE_ECKE_MM / KARTE_LANG_MM) + 'px';
+      karteZeile2.textContent = _zahlDe(breite, 1) + ' Punkte lang \u00b7 ' +
+        _zahlDe(mmProPunktAusBreite(breite), 4) + ' mm je Punkt';
+    }
+
+    function beiGroesse() {
+      if (!buehne || abgeschlossen) return;
+      ausrichtungWaehlen();
+      anzeigen();
+    }
+
+    zeigeAnleitung();
+  }
+
+  // ======================================================================
+  // 2. Helligkeitskennlinie
+  // ======================================================================
+
+  function kennlinie(container, fertig) {
+    var wurzel = vorbereiten(container);
+    wurzel.classList.add('kal-schwarz');   // „auf schwarzem Grund“
+
+    var werte = [];            // bisherige Einstellungen (Grauwerte)
+    var grau = GRAU_START;     // Grauwert der Fläche rechts, gerade eingestellt
+    var abgeschlossen = false;
+    var neuAufbauen = null;    // wird von der Einstellungsansicht gesetzt (für resize)
+
+    function beiGroesse() {
+      if (neuAufbauen) neuAufbauen();
+    }
+    global.addEventListener('resize', beiGroesse);
+
+    function beenden(ergebnis) {
+      if (abgeschlossen) return;
+      abgeschlossen = true;
+      global.removeEventListener('resize', beiGroesse);
+      leeren(container);
+      if (typeof fertig === 'function') fertig(ergebnis);
+    }
+
+    // --- Ansicht 0: Anleitung (hier ist Platz zum Lesen; beim Einstellen hat man Abstand) ---
+    function zeigeAnleitung() {
+      neuAufbauen = null;
+      leeren(wurzel);
+      wurzel.classList.remove('kal-fest');
+      var lesen = el('div', 'kal-lesen');
+      lesen.appendChild(el('h2', 'kal-titel', 'Schritt 3 von 4: Helligkeit'));
+      lesen.appendChild(el('p', 'kal-text',
+        'Die Seite muss wissen, wie hell dein Bildschirm jeden Grauton zeigt. Nur dann hat der blasse ' +
+        'Fleck im Training genau den Kontrast, mit dem die Seite rechnet.'));
+      lesen.appendChild(el('p', 'kal-text',
+        'Gleich siehst du zwei Felder nebeneinander: links feine Linien in Schwarz und Wei\u00df, ' +
+        'rechts eine graue Fl\u00e4che.'));
+      var ol = el('ol', 'kal-schritte');
+      ol.appendChild(el('li', null, 'Halte das iPhone mit ausgestrecktem Arm von dir weg und kneif die Augen ' +
+        'etwas zusammen, bis die Linien links zu einem gleichm\u00e4\u00dfigen Grau verschwimmen.'));
+      ol.appendChild(el('li', null, 'Tippe auf \u201eheller\u201c oder \u201edunkler\u201c, bis die Fl\u00e4che rechts ' +
+        'genauso hell aussieht wie das Feld links. \u201e\u22125\u201c und \u201e+5\u201c \u00e4ndern in gr\u00f6\u00dferen Stufen.'));
+      ol.appendChild(el('li', null, 'Tippe auf \u201eGleich hell\u201c.'));
+      lesen.appendChild(ol);
+      lesen.appendChild(el('p', 'kal-text',
+        'Das machst du zweimal hintereinander. Beim zweiten Mal beginnt die Fl\u00e4che mit einem anderen Grau; ' +
+        'so f\u00e4llt auf, wenn eine Einstellung danebenliegt. Gez\u00e4hlt wird der Mittelwert.'));
+      wurzel.appendChild(lesen);
+      var leiste = el('div', 'kal-leiste');
+      leiste.appendChild(knopf('\u00dcberspringen', function () { beenden(null); }));
+      leiste.appendChild(knopf('Los', function () { zeigeEinstellung(1); }, 'kal-knopf-haupt'));
+      wurzel.appendChild(leiste);
+    }
+
+    // --- Ansicht 1 und 2: Einstellen ---
+    function zeigeEinstellung(nr) {
+      grau = (nr === 1) ? GRAU_START : _zufallsStart(Math.random);
+      leeren(wurzel);
+      wurzel.classList.add('kal-fest');
+
+      var kopf = el('div', 'kal-kopf');
+      kopf.appendChild(el('h2', 'kal-titel', 'Helligkeit, Durchgang ' + nr + ' von 2'));
+      kopf.appendChild(el('p', 'kal-text kal-leise',
+        'Rechts so hell wie links? Dann \u201eGleich hell\u201c.'));
+
+      var buehne = el('div', 'kal-buehne');
+      var canvas = el('canvas', 'kal-canvas');
+      buehne.appendChild(canvas);
+
+      var leiste = el('div', 'kal-leiste');
+      leiste.appendChild(knopf('\u22125', function () { stelle(-5); }, 'kal-knopf-gross'));
+      leiste.appendChild(knopf('dunkler', function () { stelle(-1); }, 'kal-knopf-gross'));
+      leiste.appendChild(knopf('heller', function () { stelle(1); }, 'kal-knopf-gross'));
+      leiste.appendChild(knopf('+5', function () { stelle(5); }, 'kal-knopf-gross'));
+      leiste.appendChild(umbruch());
+      leiste.appendChild(knopf('\u00dcberspringen', function () { beenden(null); }, 'kal-knopf-gross'));
+      leiste.appendChild(knopf('Gleich hell', function () {
+        werte.push(grau);
+        if (nr === 1) zeigeEinstellung(2); else zeigeErgebnis();
+      }, 'kal-knopf-haupt kal-knopf-gross'));
+
+      wurzel.appendChild(kopf);
+      wurzel.appendChild(buehne);
+      wurzel.appendChild(leiste);
+
+      var ctx = null;
+      var geo = null;        // Lage der beiden Felder in Geräte-Bildpunkten
+      var versuche = 0;
+
+      // Grauwert am Container ablegen (für die Probeseite und die Fehlersuche).
+      function grauMerken() {
+        wurzel.setAttribute('data-grau', String(grau));
+      }
+
+      // Fläche rechts neu füllen: ganze Geräte-Bildpunkte, keine Skalierung.
+      function grauZeichnen() {
+        if (!ctx || !geo) return;
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.fillStyle = 'rgb(' + grau + ',' + grau + ',' + grau + ')';
+        ctx.fillRect(geo.xR, geo.y0, geo.feldB, geo.feldH);
+        grauMerken();
+      }
+
+      function stelle(schritt) {
+        grau = Math.min(GRAU_MAX, Math.max(GRAU_MIN, grau + schritt));
+        grauZeichnen();
+      }
+
+      // Linienfeld links: Bildpunkt für Bildpunkt, Zeile für Zeile abwechselnd
+      // ein Geräte-Bildpunkt Weiß (255) und ein Geräte-Bildpunkt Schwarz (0).
+      function linienZeichnen() {
+        var bild = ctx.createImageData(geo.feldB, geo.feldH);
+        var daten = bild.data;
+        var i = 0;
+        for (var zeile = 0; zeile < geo.feldH; zeile++) {
+          var v = (zeile % 2 === 0) ? 255 : 0;
+          for (var spalte = 0; spalte < geo.feldB; spalte++) {
+            daten[i] = v;
+            daten[i + 1] = v;
+            daten[i + 2] = v;
+            daten[i + 3] = 255;
+            i += 4;
+          }
+        }
+        ctx.putImageData(bild, geo.xL, geo.y0);
+      }
+
+      // Canvas in echter Geräteauflösung aufbauen: Bildpunkte = CSS-Größe mal
+      // devicePixelRatio, die CSS-Größe wird daraus zurückgerechnet, damit die
+      // Abbildung genau 1:1 ist (kein Skalieren, kein Kantenglätten).
+      function aufbauen() {
+        var dpr = global.devicePixelRatio || 1;
+        var cssB = buehne.clientWidth;
+        var cssH = buehne.clientHeight;
+        if (!cssB || !cssH) {
+          // Noch nicht angeordnet (z. B. Container noch nicht sichtbar): später erneut.
+          if (versuche++ < 20) {
+            global.setTimeout(function () {
+              if (!abgeschlossen && neuAufbauen === aufbauen) aufbauen();
+            }, 50);
+          }
+          cssB = global.innerWidth;
+          cssH = global.innerHeight - 220;
+        }
+        cssH = Math.max(FELD_HOEHE_MIN_PUNKTE + 2 * FELD_RAND_PUNKTE,
+                        Math.min(cssH, FELD_HOEHE_MAX_PUNKTE));
+
+        var bw = Math.max(4, Math.floor(cssB * dpr));
+        var bh = Math.max(4, Math.floor(cssH * dpr));
+        canvas.width = bw;                          // setzt den Zeichenzustand zurück
+        canvas.height = bh;
+        canvas.style.width = (bw / dpr) + 'px';
+        canvas.style.height = (bh / dpr) + 'px';
+        canvas.style.position = 'relative';
+        canvas.style.left = '0px';
+        canvas.style.top = '0px';
+
+        ctx = canvas.getContext('2d', { alpha: false });
+        ctx.imageSmoothingEnabled = false;
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+
+        // Lage der Felder in ganzen Geräte-Bildpunkten.
+        var rand = Math.round(FELD_RAND_PUNKTE * dpr);
+        var feldB = Math.floor((bw - 2 * rand) / 2);
+        var feldH = bh - 2 * rand;
+        geo = {
+          feldB: feldB,
+          feldH: feldH,
+          xL: Math.floor((bw - 2 * feldB) / 2),
+          y0: rand
+        };
+        geo.xR = geo.xL + feldB;
+
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, bw, bh);
+        linienZeichnen();
+        grauZeichnen();
+
+        // Liegt die linke obere Ecke des Canvas nicht auf einem ganzen Geräte-Bildpunkt
+        // des Bildschirms, schieben wir ihn um den Rest (nur die Anordnung, nie den Inhalt).
+        try {
+          var r = canvas.getBoundingClientRect();
+          var dx = _korrekturZumGeraetepunkt(r.left, dpr);
+          var dy = _korrekturZumGeraetepunkt(r.top, dpr);
+          if (dx !== 0) canvas.style.left = dx + 'px';
+          if (dy !== 0) canvas.style.top = dy + 'px';
+        } catch (e) { /* ohne Korrektur weiter */ }
+      }
+
+      neuAufbauen = aufbauen;
+      aufbauen();
+    }
+
+    // --- Ansicht 3: Ergebnis ---
+    function zeigeErgebnis() {
+      neuAufbauen = null;
+      leeren(wurzel);
+      wurzel.classList.remove('kal-fest');
+      var erg = _ergebnisKennlinie(werte);
+
+      var lesen = el('div', 'kal-lesen');
+      lesen.appendChild(el('h2', 'kal-titel', 'Helligkeit: Ergebnis'));
+      lesen.appendChild(el('p', 'kal-text',
+        'Deine beiden Einstellungen: Grauwert ' + werte[0] + ' und ' + werte[1] +
+        ', im Mittel ' + _zahlDe(erg.grauHalb, 1) + '.'));
+      lesen.appendChild(el('p', 'kal-text kal-leise',
+        'Daraus folgt die Kennlinie des Bildschirms: Helligkeit = (Grauwert / 255) hoch ' +
+        (isFinite(erg.gamma) ? _zahlDe(erg.gamma, 2) : '?') + '.'));
+      if (!erg.plausibel) {
+        lesen.appendChild(el('p', 'kal-text kal-warnung',
+          'Das Ergebnis ist ungew\u00f6hnlich, bitte noch einmal.'));
+      } else if (erg.streuung > STREUUNG_WARNUNG) {
+        lesen.appendChild(el('p', 'kal-text kal-warnung',
+          'Die beiden Einstellungen liegen weit auseinander. Eine Wiederholung ist ratsam.'));
+      } else {
+        lesen.appendChild(el('p', 'kal-text', 'Die beiden Einstellungen passen gut zusammen.'));
+      }
+      wurzel.appendChild(lesen);
+
+      var uebernehmen = function () { beenden({ gamma: erg.gamma, grauHalb: erg.grauHalb }); };
+      var nochmal = function () { werte = []; zeigeEinstellung(1); };
+
+      var leiste = el('div', 'kal-leiste');
+      leiste.appendChild(knopf('\u00dcberspringen', function () { beenden(null); }));
+      if (erg.plausibel) {
+        leiste.appendChild(knopf('Noch einmal', nochmal));
+        leiste.appendChild(knopf('\u00dcbernehmen', uebernehmen, 'kal-knopf-haupt'));
+      } else {
+        leiste.appendChild(knopf('Trotzdem \u00fcbernehmen', uebernehmen));
+        leiste.appendChild(knopf('Noch einmal', nochmal, 'kal-knopf-haupt'));
+      }
+      wurzel.appendChild(leiste);
+    }
+
+    zeigeAnleitung();
+  }
+
+  // ======================================================================
+  // 3. Bildtakt
+  // ======================================================================
+
+  function bildtakt(dauerMs, fertig) {
+    var dauer = (isFinite(dauerMs) && dauerMs > 0) ? dauerMs : BILDTAKT_VORGABE_MS;
+    var zeiten = [];       // Zeitstempel der Bilder in Millisekunden
+    var start = null;
+    var beendet = false;
+    var wachhund = null;
+
+    if (typeof global.requestAnimationFrame !== 'function') {
+      if (typeof fertig === 'function') fertig(null);
+      return;
+    }
+
+    function abschliessen() {
+      if (beendet) return;
+      beendet = true;
+      if (wachhund !== null) global.clearTimeout(wachhund);
+      var abstaende = _abstaendeAusZeiten(zeiten, BILDTAKT_VERWERFEN);
+      if (typeof fertig === 'function') fertig(_auswertungBildtakt(abstaende));
+    }
+
+    function schritt(zeit) {
+      if (beendet) return;
+      if (typeof zeit !== 'number') zeit = global.performance.now();
+      zeiten.push(zeit);
+      if (start === null) start = zeit;
+      // Fertig, wenn die Dauer um ist und nach dem Anlaufen genug Abstände da sind.
+      if (zeit - start >= dauer && zeiten.length > BILDTAKT_VERWERFEN + 5) {
+        abschliessen();
+      } else {
+        global.requestAnimationFrame(schritt);
+      }
+    }
+
+    // Läuft der Browser im Hintergrund, kommen keine Bilder; dann nach langer
+    // Wartezeit mit dem Vorhandenen auswerten, statt ewig zu warten.
+    wachhund = global.setTimeout(abschliessen, dauer * 3 + 3000);
+    global.requestAnimationFrame(schritt);
+  }
+
+  // ======================================================================
+  // 4. Prüfliste
+  // ======================================================================
+
+  function pruefliste(container, fertig) {
+    var wurzel = vorbereiten(container);
+    var abgeschlossen = false;
+
+    function beenden(wert) {
+      if (abgeschlossen) return;
+      abgeschlossen = true;
+      leeren(container);
+      if (typeof fertig === 'function') fertig(wert);
+    }
+
+    // Der Kopf steht mit in der geschobenen Liste, damit bei großer Schrift alles Platz hat.
+    var liste = el('div', 'kal-pl-liste');
+    var kopf = el('div', 'kal-pl-kopf');
+    kopf.appendChild(el('h2', 'kal-titel', 'Schritt 1 von 4: Einstellungen am iPhone'));
+    kopf.appendChild(el('p', 'kal-text',
+      'Diese Einstellungen sorgen daf\u00fcr, dass der Bildschirm jedes Mal gleich hell ist und alles ' +
+      'die richtige Gr\u00f6\u00dfe hat. Hake jeden Punkt ab, wenn er erledigt ist.'));
+    liste.appendChild(kopf);
+    var eingaben = [];
+    var alles = knopf('Alles erledigt', function () {
+      if (!alles.disabled) beenden(true);
+    }, 'kal-knopf-haupt');
+    alles.disabled = true;
+
+    // „Alles erledigt“ wird erst bedienbar, wenn jedes Kästchen angehakt ist.
+    function pruefen() {
+      var ok = true;
+      for (var i = 0; i < eingaben.length; i++) if (!eingaben[i].checked) ok = false;
+      alles.disabled = !ok;
+    }
+
+    PRUEFPUNKTE.forEach(function (punkt) {
+      var zeile = el('label', 'kal-pl-zeile');
+      var eingabe = el('input', 'kal-pl-eingabe');
+      eingabe.type = 'checkbox';
+      eingabe.addEventListener('change', pruefen);
+      eingaben.push(eingabe);
+      var kasten = el('span', 'kal-pl-kasten', '\u2713');
+      var text = el('span', 'kal-pl-text');
+      text.appendChild(el('div', 'kal-pl-titel', punkt.titel));
+      if (punkt.detail) text.appendChild(el('div', 'kal-pl-detail', punkt.detail));
+      zeile.appendChild(eingabe);
+      zeile.appendChild(kasten);
+      zeile.appendChild(text);
+      liste.appendChild(zeile);
+    });
+
+    var leiste = el('div', 'kal-leiste');
+    leiste.appendChild(knopf('\u00dcberspringen', function () { beenden(false); }));
+    leiste.appendChild(alles);
+
+    wurzel.appendChild(liste);
+    wurzel.appendChild(leiste);
+  }
+
+  // ======================================================================
+  // Öffentliche Schnittstelle
+  // ======================================================================
+
+  global.Kalibrierung = {
+    groesse: groesse,
+    kennlinie: kennlinie,
+    bildtakt: bildtakt,
+    pruefliste: pruefliste,
+    gammaAusGrau: gammaAusGrau,
+    mmProPunktAusBreite: mmProPunktAusBreite,
+    // Hilfsfunktionen, nur für Tests gedacht
+    _auswertungBildtakt: _auswertungBildtakt,
+    _abstaendeAusZeiten: _abstaendeAusZeiten,
+    _median: _median,
+    _kartenmasse: _kartenmasse,
+    _hochkantNoetig: _hochkantNoetig,
+    _zufallsStart: _zufallsStart,
+    _ergebnisKennlinie: _ergebnisKennlinie,
+    _korrekturZumGeraetepunkt: _korrekturZumGeraetepunkt,
+    _zahlDe: _zahlDe
+  };
+}(typeof window !== 'undefined' ? window : this));
+
+</script>
+<script>
+// ===== buchstabentest.js =====
+/*
+ * buchstabentest.js
+ * =================
+ * Buchstabentest der Sehschärfe in der Nähe, aufgebaut wie eine ETDRS-Sehtafel:
+ * Zeilen mit je fünf Sloan-Buchstaben, von Zeile zu Zeile um 0,1 logMAR kleiner.
+ *
+ * Schnittstelle (hängt sich als window.Buchstabentest an):
+ *   starten(container, opts, fertig)   opts = { mmProPunkt, abstandMm = 400, startLogmar = 0.8 }
+ *   abbrechen()                        beendet ohne Ergebnis, ruft fertig(null)
+ *   hoeheMm(logmar, abstandMm)         Buchstabenhöhe in mm
+ *   wertung(zeilen)                    Buchstabe-für-Buchstabe-Wertung -> { logmar, richtig, gezeigt }
+ *   zufallszeile(zufall, anzahl)       zufällige verschiedene Buchstaben als Zeichenkette
+ *
+ * Begriffe:
+ *   logMAR   Zehnerlogarithmus des Sehwinkels eines Strichs in Bogenminuten. 0 = Visus 1,0.
+ *            Je kleiner, desto schärfer sieht man. Visus = 10^(-logMAR).
+ *   Sloan    Schriftart für Sehtests: jeder Buchstabe passt in ein Quadrat aus 5 x 5 Einheiten,
+ *            die Strichstärke ist genau 1 Einheit.
+ *
+ * Das Modul benutzt das DOM erst in starten(), die reinen Funktionen laufen auch ohne Browser
+ * (zum Testen mit jsc).
+ */
+(function (global) {
+  'use strict';
+
+  // ======================================================================
+  // 1. Konstanten
+  // ======================================================================
+
+  // Zeichenvorrat der Sloan-Buchstaben (Reihenfolge = Reihenfolge der Tasten).
+  var BUCHSTABEN = 'CDHKNORSVZ';
+
+  // Regelfall: so viele Buchstaben stehen in einer Zeile.
+  var ZEILENLAENGE = 5;
+
+  // Stufen rechnen wir in Zehnteln logMAR (ganze Zahlen), damit sich keine
+  // Rundungsfehler von 0,1er-Schritten aufsummieren. -1 = -0,1 logMAR, 10 = 1,0 logMAR.
+  var ZEHNTEL_MIN = -1;
+  var ZEHNTEL_MAX = 10;
+
+  // Eine Zeile gilt als „gelesen“, wenn mindestens dieser Anteil richtig ist
+  // (4 von 5 = 0,8). Bei kürzeren Zeilen wird der Anteil entsprechend angewendet.
+  var BESTEHEN_ANTEIL = 0.8;
+
+  // Farbe der Markierung unter dem Buchstaben, der gerade dran ist (auf dem weißen Feld).
+  var MARKE_FARBE = '#e07b00';
+
+  // Maße des weißen Feldes in CSS-Pixeln (ganze Zahlen, damit das Feld auf ganzen
+  // Bildpunkten des Bildschirms liegt und nicht unscharf wird).
+  var FELD_OBEN = 16;          // Abstand vom oberen Rand bis zur Oberkante der größten Zeile
+  var MARKE_ABSTAND = 9;       // Abstand von der Buchstaben-Unterkante bis zur Spitze der Markierung
+  var MARKE_HOEHE = 8;         // Höhe der dreieckigen Markierung
+  var MARKE_BREITE = 12;       // Breite der dreieckigen Markierung
+  var FELD_UNTEN = 10;         // Abstand unter der Markierung
+  var SEITENRAND = 8;          // Mindestabstand der Zeile zum linken und rechten Rand
+
+  var aktiv = null;            // der gerade laufende Test (höchstens einer)
+
+  // ======================================================================
+  // 2. Reine Funktionen (ohne DOM)
+  // ======================================================================
+
+  // Auf zwei Nachkommastellen runden und „-0“ vermeiden.
+  function runde2(x) {
+    var r = Math.round(x * 100) / 100;
+    return r === 0 ? 0 : r;
+  }
+
+  // Buchstabenhöhe in mm. Ein Sloan-Buchstabe der Höhe h hat Strichstärke h/5; diese
+  // Strichstärke soll unter 1 Bogenminute * 10^logMAR erscheinen. Die ganze Höhe also
+  // unter 5 Bogenminuten * 10^logMAR, gerechnet auf den Sehabstand.
+  function hoeheMm(logmar, abstandMm) {
+    var bogenminuten = 5 * Math.pow(10, logmar);
+    var bogenmass = (bogenminuten / 60) * Math.PI / 180;
+    return abstandMm * Math.tan(bogenmass);
+  }
+
+  // Zufällige, voneinander verschiedene Buchstaben als Zeichenkette (Vorgabe: 5 Stück).
+  // zufall: Funktion, die Zahlen in [0,1) liefert (Vorgabe Math.random). Wir ziehen
+  // der Reihe nach aus einem Vorrat, aus dem jeder gezogene Buchstabe entfernt wird;
+  // so kann kein Buchstabe doppelt vorkommen.
+  function zufallszeile(zufall, anzahl) {
+    var f = (typeof zufall === 'function') ? zufall : Math.random;
+    var n = (anzahl == null) ? ZEILENLAENGE : Math.floor(anzahl);
+    n = Math.max(1, Math.min(BUCHSTABEN.length, n));
+    var vorrat = BUCHSTABEN.split('');
+    var zeile = '';
+    for (var i = 0; i < n; i++) {
+      var k = Math.floor(f() * vorrat.length);
+      if (!(k >= 0)) k = 0;                                  // auch bei NaN
+      if (k >= vorrat.length) k = vorrat.length - 1;         // falls zufall() doch 1 liefert
+      zeile += vorrat.splice(k, 1)[0];
+    }
+    return zeile;
+  }
+
+  // Wie viele Buchstaben einer Zeile gezeigt wurden. Fehlt die Angabe, gilt der Regelfall.
+  function anzahlBuchstaben(z) {
+    var b = z && z.buchstaben;
+    if (b != null && typeof b.length === 'number' && b.length > 0) return b.length;
+    return ZEILENLAENGE;
+  }
+
+  // Wie viele Buchstaben einer Zeile richtig waren: entweder das Feld „richtig“
+  // oder, falls es fehlt, der Vergleich von Buchstaben und Antworten.
+  function richtigeAnzahl(z) {
+    if (typeof z.richtig === 'number') return z.richtig;
+    var r = 0, b = z.buchstaben || '', a = z.antworten || '';
+    for (var i = 0; i < b.length; i++) if (a[i] === b[i]) r++;
+    return r;
+  }
+
+  // Wertung Buchstabe für Buchstabe (wie bei der ETDRS-Tafel):
+  //   logMAR = L0 + 0,1 - 0,02 * (alle richtigen Buchstaben in Zeilen mit logMAR <= L0)
+  // L0 ist die größte gezeigte Zeile. Bei Zeilen mit weniger als 5 Buchstaben zählt jeder
+  // Buchstabe entsprechend mehr (0,1 / Anzahl statt 0,02), so dass jede Zeile insgesamt
+  // 0,1 logMAR wert bleibt. Ergebnis höchstens 1,1.
+  // Gerechnet wird in Hundertsteln (ganze Zahlen), damit nichts durch Rundung verrutscht.
+  function wertung(zeilen) {
+    var l0 = -Infinity;                    // L0 in Zehnteln
+    var i, z, zehntel;
+    for (i = 0; i < zeilen.length; i++) {
+      zehntel = Math.round(zeilen[i].logmar * 10);
+      if (zehntel > l0) l0 = zehntel;
+    }
+    if (l0 === -Infinity) return { logmar: 1.1, richtig: 0, gezeigt: 0 };
+
+    var richtig = 0, gezeigt = 0, abzug = 0;           // abzug in Hundertsteln logMAR
+    for (i = 0; i < zeilen.length; i++) {
+      z = zeilen[i];
+      var n = anzahlBuchstaben(z);
+      var r = richtigeAnzahl(z);
+      richtig += r;
+      gezeigt += n;
+      if (Math.round(z.logmar * 10) <= l0) abzug += r * 10 / n;
+    }
+    var hundertstel = Math.min(110, l0 * 10 + 10 - abzug);
+    return { logmar: runde2(Math.round(hundertstel) / 100), richtig: richtig, gezeigt: gezeigt };
+  }
+
+  // Wie viele Buchstaben einer Zeile in die Breite passen. Eine Zeile aus n Buchstaben ist
+  // (2n - 1) Buchstabenbreiten breit (Zwischenraum = eine Buchstabenbreite). Wir verkleinern
+  // nie, sondern zeigen weniger Buchstaben, aber mindestens 3 und höchstens 5.
+  function passendeAnzahl(hoeheCss, breiteCss) {
+    if (!(hoeheCss > 0) || !(breiteCss > 0)) return ZEILENLAENGE;
+    var n = Math.floor((breiteCss / hoeheCss + 1) / 2 + 1e-9);
+    return Math.max(3, Math.min(ZEILENLAENGE, n));
+  }
+
+  // ----------------------------------------------------------------------
+  // Ablaufregeln: welche Zeile kommt als Nächstes?
+  // ----------------------------------------------------------------------
+  // Zustand eines Tests (alle Stufen in Zehnteln logMAR):
+  //   modus     'start' = erste Zeile noch nicht gewertet, 'auf' = es geht nach oben (größer),
+  //             weil die bisherigen Zeilen nicht gelesen wurden, 'ab' = es geht abwärts
+  //   aktuell   die Stufe der Zeile, die jetzt gezeigt wird
+  //   kleinste, groesste   kleinste und größte bisher gezeigte Stufe
+  //   fertig    true, sobald der Test zu Ende ist
+  function neuerVerlauf(startLogmar) {
+    var s = Math.round((isFinite(startLogmar) ? startLogmar : 0.8) * 10);
+    s = Math.max(ZEHNTEL_MIN, Math.min(ZEHNTEL_MAX, s));
+    return { modus: 'start', aktuell: s, kleinste: s, groesste: s, fertig: false };
+  }
+
+  // Meldet das Ergebnis der gerade gezeigten Zeile (richtig von anzahl) und
+  // bestimmt die nächste Stufe oder das Ende.
+  //   - Phase 'start'/'auf': Hat die Zeile genug richtige (4 von 5), ist sie die Ausgangszeile,
+  //     und es geht unterhalb der kleinsten bisher gezeigten Zeile abwärts weiter. Sonst
+  //     eine Stufe größer, höchstens bis 1,0; wird dort nicht gelesen, ist der Test zu Ende.
+  //   - Phase 'ab': Ende bei mehr als der Hälfte falsch (bei 5 Buchstaben: 3 oder mehr Fehler)
+  //     oder nach der Zeile -0,1.
+  function verlaufWeiter(v, richtig, anzahl) {
+    var bestanden = richtig >= Math.ceil(BESTEHEN_ANTEIL * anzahl - 1e-9);
+    var zuVieleFalsch = (anzahl - richtig) * 2 > anzahl;
+    v.kleinste = Math.min(v.kleinste, v.aktuell);
+    v.groesste = Math.max(v.groesste, v.aktuell);
+
+    if (v.modus === 'ab') {
+      if (zuVieleFalsch || v.aktuell <= ZEHNTEL_MIN) { v.fertig = true; return v; }
+      v.aktuell = v.kleinste - 1;
+      return v;
+    }
+
+    if (bestanden) {                                   // Ausgangszeile gefunden
+      v.modus = 'ab';
+      if (v.kleinste <= ZEHNTEL_MIN) { v.fertig = true; return v; }
+      v.aktuell = v.kleinste - 1;                      // keine Zeile doppelt zeigen
+    } else {
+      v.modus = 'auf';
+      if (v.groesste >= ZEHNTEL_MAX) { v.fertig = true; return v; }
+      v.aktuell = v.groesste + 1;
+    }
+    return v;
+  }
+
+  // Das Ergebnisobjekt, das an fertig() geht, aus den gezeigten Zeilen und der Dauer.
+  // visus = 10^(-logMAR), beide auf zwei Nachkommastellen gerundet.
+  function baueErgebnis(zeilen, dauerS) {
+    var w = wertung(zeilen);
+    return {
+      logmar: w.logmar,
+      visus: runde2(Math.pow(10, -w.logmar)),
+      richtig: w.richtig,
+      gezeigt: w.gezeigt,
+      zeilen: zeilen,
+      dauerS: dauerS
+    };
+  }
+
+  // Zahl deutsch mit Komma und zwei Nachkommastellen, negative mit echtem Minuszeichen.
+  function formatZahl(x) {
+    var s = Math.abs(x).toFixed(2).replace('.', ',');
+    return (x < 0 ? '−' : '') + s;
+  }
+
+  // ======================================================================
+  // 3. Sloan-Buchstaben als Vektorformen
+  // ======================================================================
+  // Jede Funktion zeichnet einen Buchstaben in ein Quadrat von 5 x 5 Einheiten
+  // (Ursprung oben links, y nach unten) in den aktuellen Pfad der Zeichenfläche und füllt
+  // ihn. Die Umrechnung auf Bildpunkte macht zeichneBuchstabe() über die Transformation.
+  //
+  // Jeder Buchstabe wird mit EINEM Füllvorgang gezeichnet. Teilpfade, die einander
+  // überdecken (Stamm + Bogen), werden dann zusammengefasst und nicht doppelt gedeckt;
+  // sonst würden Kanten, wo sich zwei Teile überlappen, durch die Kantenglättung dunkler
+  // erscheinen. Löcher entstehen durch entgegengesetzte Umlaufrichtung (Regel „nonzero“).
+  //
+  // Schräge Striche: Ein Strich der Dicke 1 senkrecht zu seiner Richtung ist waagerecht
+  // gemessen breiter. diagBreite() löst die Gleichung  w = Länge / Höhe  für den Strich
+  // aus der Mitte (xm|y1) zur Spitze, wobei die Spitze selbst von w abhängt.
+  //   a - c*w = waagerechter Weg der Mittellinie, b = senkrechter Weg.
+  function diagBreite(a, c, b) {
+    var w = 1;
+    for (var i = 0; i < 60; i++) w = Math.sqrt((a - c * w) * (a - c * w) + b * b) / b;
+    return w;
+  }
+
+  // Vieleck aus x/y-Paaren in den Pfad legen (ohne zu füllen).
+  function vieleck(ctx, p) {
+    ctx.moveTo(p[0], p[1]);
+    for (var i = 2; i < p.length; i += 2) ctx.lineTo(p[i], p[i + 1]);
+    ctx.closePath();
+  }
+
+  var PI = Math.PI;
+
+  // Schräge Striche von K, N, R, V, Z (Breiten einmal vorab ausgerechnet).
+  var W_N = diagBreite(5, 1, 5);        // N: von oben links nach unten rechts, über die ganze Höhe
+  var W_K = diagBreite(4, 0.5, 2.5);    // K: Arm von der Stammmitte zur Ecke oben rechts
+  var M_K = 2.5 / (4 - W_K / 2);        // K: senkrechter Weg je waagerechtem Weg des Arms
+  var W_V = diagBreite(2.5, 0.5, 5);    // V: Arm von oben außen zur Spitze unten Mitte
+  var W_Z = diagBreite(5, 1, 3);        // Z: Diagonale zwischen den beiden Balken
+  var W_R = diagBreite(2.6, 0.5, 2);    // R: Bein vom Bogen (x = 2,4) zur Ecke unten rechts
+  var M_R = 2 / (5 - W_R / 2 - 2.4);    // R: senkrechter Weg je waagerechtem Weg des Beins
+
+  var GLYPHEN = {
+    // C: Ring (Außendurchmesser 5, Innendurchmesser 3) mit Öffnung rechts, die genau
+    // eine Strichstärke hoch ist. Die Kanten der Öffnung sind waagerecht.
+    C: function (ctx) {
+      var m = 2.5, ra = 2.5, ri = 1.5;
+      var wa = Math.asin(0.5 / ra), wi = Math.asin(0.5 / ri);
+      ctx.beginPath();
+      ctx.arc(m, m, ra, -wa, wa, true);                          // außen: links herum
+      ctx.lineTo(m + Math.cos(wi) * ri, m + Math.sin(wi) * ri);  // Kante der Öffnung
+      ctx.arc(m, m, ri, wi, -wi, false);                         // innen zurück
+      ctx.closePath();
+      ctx.fill();
+    },
+
+    // D: gerade linke Seite, oben und unten gerade bis zur Mitte, rechts Halbkreis.
+    D: function (ctx) {
+      ctx.beginPath();
+      ctx.moveTo(0, 0); ctx.lineTo(2.5, 0);
+      ctx.arc(2.5, 2.5, 2.5, -PI / 2, PI / 2, false);
+      ctx.lineTo(0, 5); ctx.closePath();
+      ctx.moveTo(1, 1); ctx.lineTo(1, 4); ctx.lineTo(2.5, 4);    // Loch (andere Richtung)
+      ctx.arc(2.5, 2.5, 1.5, PI / 2, -PI / 2, true);
+      ctx.closePath();
+      ctx.fill();
+    },
+
+    // H: zwei Stämme und ein Quersteg genau in der Mitte.
+    H: function (ctx) {
+      ctx.beginPath();
+      vieleck(ctx, [0, 0, 1, 0, 1, 2, 4, 2, 4, 0, 5, 0, 5, 5, 4, 5, 4, 3, 1, 3, 1, 5, 0, 5]);
+      ctx.fill();
+    },
+
+    // K: Stamm links, zwei Arme, die sich am Stamm treffen und zu den rechten Ecken laufen.
+    K: function (ctx) {
+      var y1 = (4 - W_K) * M_K;             // wo die obere Kante des oberen Arms den Stamm trifft
+      ctx.beginPath();
+      vieleck(ctx, [0, 0, 1, 0, 1, y1, 5 - W_K, 0, 5, 0, 1 + W_K / 2, 2.5,
+                    5, 5, 5 - W_K, 5, 1, 5 - y1, 1, 5, 0, 5]);
+      ctx.fill();
+    },
+
+    // N: zwei Stämme und eine Diagonale von oben links nach unten rechts.
+    N: function (ctx) {
+      var w = W_N;
+      var y4 = (4 - w) / (5 - w) * 5;       // obere Kante der Diagonale am rechten Stamm
+      var y1 = 1 / (5 - w) * 5;             // untere Kante der Diagonale am linken Stamm
+      ctx.beginPath();
+      vieleck(ctx, [0, 0, w, 0, 4, y4, 4, 0, 5, 0, 5, 5, 5 - w, 5, 1, y1, 1, 5, 0, 5]);
+      ctx.fill();
+    },
+
+    // O: Ring, Außendurchmesser 5, Innendurchmesser 3.
+    O: function (ctx) {
+      ctx.beginPath();
+      ctx.arc(2.5, 2.5, 2.5, 0, 2 * PI, false);
+      ctx.moveTo(4, 2.5);
+      ctx.arc(2.5, 2.5, 1.5, 2 * PI, 0, true);                   // Loch (andere Richtung)
+      ctx.fill();
+    },
+
+    // R: Stamm, Bogen oben (3 hoch, Innenraum 1 hoch) und ein schräges Bein nach unten rechts.
+    R: function (ctx) {
+      var dx = 2.5 / M_R;                   // waagerechter Weg des Beins von y = 5 bis y = 2,5
+      ctx.beginPath();
+      vieleck(ctx, [0, 0, 1, 0, 1, 5, 0, 5]);                    // Stamm
+      ctx.moveTo(0, 0); ctx.lineTo(3.5, 0);                      // Bogen außen
+      ctx.arc(3.5, 1.5, 1.5, -PI / 2, PI / 2, false);
+      ctx.lineTo(0, 3); ctx.closePath();
+      ctx.moveTo(1, 1); ctx.lineTo(1, 2); ctx.lineTo(3.5, 2);    // Innenraum (andere Richtung)
+      ctx.arc(3.5, 1.5, 0.5, PI / 2, -PI / 2, true);
+      ctx.closePath();
+      vieleck(ctx, [5 - W_R - dx, 2.5, 5 - dx, 2.5, 5, 5, 5 - W_R, 5]);   // Bein
+      ctx.fill();
+    },
+
+    // S: Mittellinie aus zwei Ellipsenbögen (oben links herum, unten rechts herum), Strichstärke 1.
+    // Oben, Mitte und unten je ein Balken, dazwischen je 1 Einheit Luft.
+    S: function (ctx) {
+      var ende = PI * 36 / 180;             // Winkel, an dem die Enden aufhören (36 Grad zur Waagerechten)
+      ctx.beginPath();
+      ctx.ellipse(2.5, 1.5, 2, 1, 0, -ende, PI / 2, true);       // oberer Bogen, Ende rechts
+      ctx.ellipse(2.5, 3.5, 2, 1, 0, -PI / 2, PI - ende, false); // unterer Bogen, Ende links
+      ctx.lineWidth = 1;
+      ctx.lineCap = 'butt';
+      ctx.lineJoin = 'miter';
+      ctx.stroke();
+    },
+
+    // V: zwei Schrägen, die unten mit einer flachen Spitze (so breit wie ein Strich) enden.
+    V: function (ctx) {
+      var w = W_V;
+      var yv = (2.5 - w) / (2.5 - w / 2) * 5;       // Tiefe der inneren Spitze
+      ctx.beginPath();
+      vieleck(ctx, [0, 0, w, 0, 2.5, yv, 5 - w, 0, 5, 0, 2.5 + w / 2, 5, 2.5 - w / 2, 5]);
+      ctx.fill();
+    },
+
+    // Z: Balken oben und unten, verbunden durch eine Diagonale von oben rechts nach unten links.
+    Z: function (ctx) {
+      var w = W_Z;
+      ctx.beginPath();
+      vieleck(ctx, [0, 0, 5, 0, 5, 1, w, 4, 5, 4, 5, 5, 0, 5, 0, 4, 5 - w, 1, 0, 1]);
+      ctx.fill();
+    }
+  };
+
+  // Zeichnet einen Sloan-Buchstaben mit der linken oberen Ecke (ox|oy) und der Höhe hoehe,
+  // alles in Bildpunkten der Zeichenfläche. Die Transformation wird absolut gesetzt
+  // (nicht an eine vorherige angehängt) und danach zurückgenommen.
+  function zeichneBuchstabe(ctx, buchstabe, ox, oy, hoehe, farbe) {
+    var f = GLYPHEN[buchstabe];
+    if (!f) return;
+    var u = hoehe / 5;                      // eine Einheit = eine Strichstärke
+    ctx.save();
+    ctx.setTransform(u, 0, 0, u, ox, oy);
+    ctx.fillStyle = farbe || '#000';
+    ctx.strokeStyle = farbe || '#000';
+    f(ctx);
+    ctx.restore();
+  }
+
+  // ======================================================================
+  // 4. Oberfläche (DOM)
+  // ======================================================================
+
+  var STIL = [
+    '.bt-wurzel{position:relative;box-sizing:border-box;width:100%;height:100%;display:flex;flex-direction:column;',
+    'overflow:hidden;background:var(--hg,#000);color:var(--text,#fff);',
+    'font-family:var(--schrift,-apple-system,BlinkMacSystemFont,"Helvetica Neue",Helvetica,Arial,sans-serif);font-size:1rem;line-height:1.35;',
+    '-webkit-text-size-adjust:100%;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;',
+    '-webkit-tap-highlight-color:transparent;touch-action:manipulation;overscroll-behavior:none;',
+    'padding:env(safe-area-inset-top,0px) env(safe-area-inset-right,0px) env(safe-area-inset-bottom,0px) env(safe-area-inset-left,0px)}',
+    '.bt-wurzel *{box-sizing:border-box}',
+    '.bt-kopf{flex:none;display:flex;align-items:center;justify-content:space-between;min-height:60px;padding:4px 8px 4px 16px}',
+    '.bt-titel{font-size:.8rem;opacity:.8}',
+    '.bt-knopf{min-width:52px;min-height:52px;padding:10px 20px;border:0;border-radius:12px;',
+    'background:var(--knopf-hg,#333);color:var(--knopf-text,#fff);font:inherit;font-size:1rem;cursor:pointer;touch-action:manipulation}',
+    '.bt-knopf:active,.bt-taste:active{opacity:.6}',
+    '.bt-abbrechen{padding:0 14px;font-size:.85rem}',
+    '.bt-buehne{flex:1 1 auto;min-height:0;display:flex;flex-direction:column}',
+    '.bt-mitte{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:column;align-items:center;',
+    'padding:24px 20px 40px;text-align:center}',
+    '.bt-mitte>:first-child{margin-top:auto}',
+    '.bt-mitte>:last-child{margin-bottom:auto}',
+    '.bt-h1{font-size:1.25rem;font-weight:700;margin:0 0 16px}',
+    '.bt-text{font-size:1rem;max-width:30em;margin:0 0 16px}',
+    '.bt-klein{font-size:.85rem;opacity:.8;max-width:30em;margin:0 0 28px}',
+    '.bt-gross{min-width:160px;min-height:60px;padding:0 32px;font-size:1.05rem;font-weight:700}',
+    '.bt-ergebnis{font-size:1.2rem;font-weight:700;margin:0 0 12px}',
+    '.bt-test{flex:1;min-height:0;display:flex;flex-direction:column}',
+    '.bt-feld{flex:none;width:100%;background:#fff;overflow:hidden}',
+    '.bt-leinwand{display:block}',
+    '.bt-antworten{flex:none;display:flex;justify-content:center;gap:8px;padding:16px 12px 8px}',
+    '.bt-platz{width:46px;height:52px;border:2px solid rgba(128,128,128,.55);border-radius:10px;',
+    'display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:600}',
+    '.bt-platz-dran{border-color:var(--akzent,#e07b00)}',
+    '.bt-tasten{margin-top:auto;align-self:center;width:100%;max-width:520px;display:grid;grid-template-columns:repeat(3,1fr);',
+    'grid-auto-rows:minmax(52px,64px);gap:8px;padding:8px 12px 12px}',
+    '@media (orientation:landscape){.bt-tasten{grid-template-columns:repeat(6,1fr);grid-auto-rows:minmax(48px,60px)}}',
+    '.bt-taste{padding:0;min-height:44px;border:0;border-radius:12px;background:var(--knopf-hg,#333);color:var(--knopf-text,#fff);',
+    'font:inherit;font-size:28px;font-weight:600;cursor:pointer;touch-action:manipulation}'
+  ].join('');
+
+  // Den Stilblock genau einmal ins Dokument einfügen.
+  function stilEinfuegen() {
+    if (document.getElementById('bt-stil')) return;
+    var s = document.createElement('style');
+    s.id = 'bt-stil';
+    s.textContent = STIL;
+    document.head.appendChild(s);
+  }
+
+  function el(tag, klasse, text) {
+    var e = document.createElement(tag);
+    if (klasse) e.className = klasse;
+    if (text != null) e.textContent = text;
+    return e;
+  }
+
+  function knopf(text, klasse, aktion, beschriftung) {
+    var b = el('button', klasse, text);
+    b.type = 'button';
+    if (beschriftung) b.setAttribute('aria-label', beschriftung);
+    b.addEventListener('click', function (ev) { ev.preventDefault(); aktion(); });
+    return b;
+  }
+
+  function leeren(knoten) {
+    while (knoten.firstChild) knoten.removeChild(knoten.firstChild);
+  }
+
+  // ---------------------------------------------------------------------
+  // Startbild mit Hinweistext
+  // ---------------------------------------------------------------------
+  function zeigeHinweis(a) {
+    leeren(a.buehne);
+    var abstandCm = a.abstandMm / 10;
+    var cmText = (abstandCm === Math.round(abstandCm)) ? String(abstandCm)
+      : String(Math.round(abstandCm * 10) / 10).replace('.', ',');
+    var mitte = el('div', 'bt-mitte');
+    mitte.appendChild(el('h1', 'bt-h1', 'Buchstabentest'));
+    // Kurz gehalten: gelesen wird ohne Lesebrille, bei 28 Punkten Schrift soll alles ohne Schieben passen.
+    mitte.appendChild(el('p', 'bt-text',
+      cmText + ' cm Abstand, ohne Lesebrille, beide Augen offen. ' +
+      'Buchstaben von links nach rechts unten antippen. Im Zweifel raten.'));
+    mitte.appendChild(el('p', 'bt-klein',
+      '„?“ heißt „weiß nicht“, ⌫ nimmt die letzte Eingabe zurück.'));
+    mitte.appendChild(knopf('Los', 'bt-knopf bt-gross', function () {
+      a.startZeit = Date.now();
+      zeigeTest(a);
+    }));
+    a.buehne.appendChild(mitte);
+  }
+
+  // ---------------------------------------------------------------------
+  // Testbild: weißes Feld mit der Zeile, Antwortfelder, Tastatur
+  // ---------------------------------------------------------------------
+  function zeigeTest(a) {
+    leeren(a.buehne);
+    var test = el('div', 'bt-test');
+
+    a.feld = el('div', 'bt-feld');
+    a.feld.style.height = a.feldHoehe + 'px';
+    a.leinwand = el('canvas', 'bt-leinwand');
+    a.leinwand.setAttribute('aria-label', 'Buchstabenzeile');
+    a.feld.appendChild(a.leinwand);
+    test.appendChild(a.feld);
+
+    a.plaetze = el('div', 'bt-antworten');
+    test.appendChild(a.plaetze);
+
+    // Tastatur: die 10 Buchstaben, dann „?“ (weiß ich nicht) und die Rücktaste.
+    var tasten = el('div', 'bt-tasten');
+    BUCHSTABEN.split('').forEach(function (c) {
+      tasten.appendChild(knopf(c, 'bt-taste', function () { antwort(a, c); }));
+    });
+    tasten.appendChild(knopf('?', 'bt-taste', function () { antwort(a, '?'); }, 'weiß ich nicht'));
+    tasten.appendChild(knopf('⌫', 'bt-taste', function () { zurueck(a); }, 'letzte Eingabe zurücknehmen'));
+    test.appendChild(tasten);
+
+    a.buehne.appendChild(test);
+    var akzent = '';
+    try { akzent = (getComputedStyle(a.wurzel).getPropertyValue('--akzent') || '').trim(); } catch (e) { /* egal */ }
+    a.markeFarbe = akzent || MARKE_FARBE;
+    neueZeile(a);
+  }
+
+  // Die nächste Zeile bestimmen und anzeigen.
+  function neueZeile(a) {
+    var logmar = a.verlauf.aktuell / 10;                 // ganze Zehntel / 10 ergibt genau 0,1er-Werte
+    var hCss = hoeheMm(logmar, a.abstandMm) / a.mm;      // Buchstabenhöhe in CSS-Pixeln
+    var breite = Math.floor(a.feld.clientWidth) - 2 * SEITENRAND;
+    var n = passendeAnzahl(hCss, breite);
+    a.zeile = { logmar: logmar, buchstaben: zufallszeile(a.zufall, n), antworten: '' };
+
+    leeren(a.plaetze);
+    for (var i = 0; i < n; i++) a.plaetze.appendChild(el('div', 'bt-platz'));
+    aktualisiere(a);
+  }
+
+  // Antwortfelder und Zeichnung nach jeder Eingabe auffrischen.
+  function aktualisiere(a) {
+    var z = a.zeile, kinder = a.plaetze.children;
+    for (var i = 0; i < kinder.length; i++) {
+      kinder[i].textContent = i < z.antworten.length ? z.antworten.charAt(i) : '';
+      kinder[i].className = 'bt-platz' + (i === z.antworten.length ? ' bt-platz-dran' : '');
+    }
+    zeichneZeile(a);
+  }
+
+  // Zeile auf die Zeichenfläche malen. Die Zeichenfläche hat echte Geräteauflösung:
+  // Größe in Bildpunkten = CSS-Größe * devicePixelRatio. Die Buchstabenhöhe wird nicht
+  // gerundet (sonst würde die Stufe verfälscht), aber die linke obere Ecke jedes Buchstabens
+  // liegt auf einem ganzen Bildpunkt, damit alle Buchstaben gleich abgetastet werden.
+  function zeichneZeile(a) {
+    var c = a.leinwand, z = a.zeile;
+    var cssB = Math.floor(a.feld.clientWidth);
+    if (!(cssB > 0)) return;
+    var dpr = global.devicePixelRatio || 1;
+    c.width = Math.round(cssB * dpr);
+    c.height = Math.round(a.feldHoehe * dpr);
+    c.style.width = cssB + 'px';
+    c.style.height = a.feldHoehe + 'px';
+    var s = c.width / cssB;                              // wirklicher Maßstab Bildpunkte je CSS-Pixel
+    var ctx = c.getContext('2d');
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(0, 0, c.width, c.height);
+
+    var n = z.buchstaben.length;
+    var h = hoeheMm(z.logmar, a.abstandMm) / a.mm * s;   // Buchstabenhöhe in Bildpunkten
+    var x0 = (c.width - (2 * n - 1) * h) / 2;            // Zeile mittig
+    var unten = Math.round((FELD_OBEN + a.hMaxCss) * s); // gemeinsame Grundlinie aller Zeilen
+    var oben = Math.round(unten - h);
+    var i, x;
+    for (i = 0; i < n; i++) {
+      x = Math.round(x0 + i * 2 * h);
+      zeichneBuchstabe(ctx, z.buchstaben.charAt(i), x, oben, h, '#000');
+    }
+
+    // Markierung: kleines Dreieck unter dem Buchstaben, der als Nächstes beantwortet wird.
+    i = z.antworten.length;
+    if (i < n) {
+      var mx = Math.round(x0 + i * 2 * h) + h / 2;
+      var sp = unten + MARKE_ABSTAND * s;                // Spitze
+      ctx.fillStyle = a.markeFarbe;
+      ctx.beginPath();
+      ctx.moveTo(mx, sp);
+      ctx.lineTo(mx - MARKE_BREITE / 2 * s, sp + MARKE_HOEHE * s);
+      ctx.lineTo(mx + MARKE_BREITE / 2 * s, sp + MARKE_HOEHE * s);
+      ctx.closePath();
+      ctx.fill();
+    }
+  }
+
+  // Eine Taste wurde angetippt.
+  function antwort(a, zeichen) {
+    if (a.beendet) return;
+    var z = a.zeile;
+    if (z.antworten.length >= z.buchstaben.length) return;
+    z.antworten += zeichen;
+    if (z.antworten.length >= z.buchstaben.length) zeileFertig(a); else aktualisiere(a);
+  }
+
+  // Rücktaste: nimmt die letzte Antwort der laufenden Zeile zurück.
+  function zurueck(a) {
+    if (a.beendet) return;
+    var z = a.zeile;
+    if (z.antworten.length > 0) z.antworten = z.antworten.slice(0, -1);
+    aktualisiere(a);
+  }
+
+  // Alle Antworten einer Zeile sind da: zählen, sofort weiter (ohne Rückmeldung, damit man
+  // nicht lernt, welche Antworten stimmten).
+  function zeileFertig(a) {
+    var z = a.zeile, richtig = 0;
+    for (var i = 0; i < z.buchstaben.length; i++) {
+      if (z.antworten.charAt(i) === z.buchstaben.charAt(i)) richtig++;
+    }
+    a.zeilen.push({ logmar: z.logmar, buchstaben: z.buchstaben, antworten: z.antworten, richtig: richtig });
+    verlaufWeiter(a.verlauf, richtig, z.buchstaben.length);
+    if (a.verlauf.fertig) zeigeErgebnis(a); else neueZeile(a);
+  }
+
+  // ---------------------------------------------------------------------
+  // Schlussbild
+  // ---------------------------------------------------------------------
+  function zeigeErgebnis(a) {
+    a.ergebnis = baueErgebnis(a.zeilen, Math.round((Date.now() - a.startZeit) / 1000));
+    leeren(a.buehne);
+    var mitte = el('div', 'bt-mitte');
+    mitte.appendChild(el('div', 'bt-ergebnis',
+      'Ergebnis: Visus ' + formatZahl(a.ergebnis.visus) + ' (logMAR ' + formatZahl(a.ergebnis.logmar) + ')'));
+    mitte.appendChild(el('p', 'bt-klein',
+      a.ergebnis.richtig + ' von ' + a.ergebnis.gezeigt + ' Buchstaben richtig gelesen.'));
+    mitte.appendChild(knopf('Weiter', 'bt-knopf bt-gross', function () { beenden(a, a.ergebnis); }));
+    a.buehne.appendChild(mitte);
+  }
+
+  // ---------------------------------------------------------------------
+  // Aufräumen und Beenden
+  // ---------------------------------------------------------------------
+  function beenden(a, ergebnis) {
+    if (a.beendet) return;
+    a.beendet = true;
+    global.removeEventListener('resize', a.beiGroessenaenderung);
+    global.removeEventListener('orientationchange', a.beiGroessenaenderung);
+    if (a.wurzel.parentNode) a.wurzel.parentNode.removeChild(a.wurzel);
+    if (aktiv === a) aktiv = null;
+    if (typeof a.fertig === 'function') a.fertig(ergebnis);
+  }
+
+  // ======================================================================
+  // 5. Öffentliche Schnittstelle
+  // ======================================================================
+
+  function starten(container, opts, fertig) {
+    if (aktiv) abbrechen();                                // höchstens ein Test zugleich
+    opts = opts || {};
+    var mm = Number(opts.mmProPunkt);
+    if (!(mm > 0) || !isFinite(mm)) {
+      // Ohne Größenabgleich wäre die Buchstabengröße geraten und die Messung wertlos.
+      throw new TypeError('Buchstabentest: opts.mmProPunkt fehlt oder ist ungültig');
+    }
+    var abstand = Number(opts.abstandMm);
+    if (!(abstand > 0) || !isFinite(abstand)) abstand = 400;
+
+    stilEinfuegen();
+
+    var a = {
+      container: container,
+      fertig: fertig,
+      mm: mm,
+      abstandMm: abstand,
+      verlauf: neuerVerlauf(opts.startLogmar == null ? 0.8 : Number(opts.startLogmar)),
+      zeilen: [],
+      zufall: (typeof opts.zufall === 'function') ? opts.zufall : Math.random,
+      beendet: false,
+      startZeit: Date.now()
+    };
+
+    // Das weiße Feld ist für die größte mögliche Zeile (1,0 logMAR) bemessen und bleibt für
+    // alle Zeilen gleich hoch; die Grundlinie der Buchstaben liegt immer an derselben Stelle.
+    a.hMaxCss = Math.min(400, Math.ceil(hoeheMm(ZEHNTEL_MAX / 10, abstand) / mm));
+    a.feldHoehe = FELD_OBEN + a.hMaxCss + MARKE_ABSTAND + MARKE_HOEHE + FELD_UNTEN;
+
+    // Grundgerüst: Kopfzeile mit dem Abbrechen-Knopf und eine Bühne für die wechselnden Bilder.
+    a.wurzel = el('div', 'bt-wurzel');
+    var kopf = el('div', 'bt-kopf');
+    kopf.appendChild(el('div', 'bt-titel', 'Buchstabentest'));
+    kopf.appendChild(knopf('Abbrechen', 'bt-knopf bt-abbrechen', function () { abbrechen(); }));
+    a.wurzel.appendChild(kopf);
+    a.buehne = el('div', 'bt-buehne');
+    a.wurzel.appendChild(a.buehne);
+
+    // Während des Tests soll sich nichts verschieben und nichts zoomen: Zoom würde
+    // die Buchstabengröße verfälschen.
+    var sperre = function (ev) { ev.preventDefault(); };
+    a.wurzel.addEventListener('touchmove', sperre, { passive: false });
+    a.wurzel.addEventListener('gesturestart', sperre);
+
+    a.beiGroessenaenderung = function () {
+      if (a.beendet || !a.zeile || !a.leinwand || !a.leinwand.parentNode) return;
+      zeichneZeile(a);
+    };
+    global.addEventListener('resize', a.beiGroessenaenderung);
+    global.addEventListener('orientationchange', a.beiGroessenaenderung);
+
+    container.appendChild(a.wurzel);
+    aktiv = a;
+    zeigeHinweis(a);
+  }
+
+  // Beendet den laufenden Test ohne Ergebnis; fertig(null) wird aufgerufen.
+  function abbrechen() {
+    if (aktiv) beenden(aktiv, null);
+  }
+
+  global.Buchstabentest = {
+    starten: starten,
+    abbrechen: abbrechen,
+    hoeheMm: hoeheMm,
+    wertung: wertung,
+    zufallszeile: zufallszeile,
+    // Nur für Tests und die Probeseite, nicht Teil der Schnittstelle:
+    _intern: {
+      glyphen: GLYPHEN,
+      zeichneBuchstabe: zeichneBuchstabe,
+      neuerVerlauf: neuerVerlauf,
+      verlaufWeiter: verlaufWeiter,
+      passendeAnzahl: passendeAnzahl,
+      formatZahl: formatZahl,
+      baueErgebnis: baueErgebnis,
+      breiten: { N: W_N, K: W_K, V: W_V, Z: W_Z, R: W_R }
+    }
+  };
+})(typeof window !== 'undefined' ? window : this);
+
+</script>
+<script>
+// ===== speicher_gemeinsam.js =====
+// Gemeinsame Regeln der beiden Speicher (claude.ai-Seite: speicher_claude.js, Web-App:
+// speicher_github.js): wie leere Daten aussehen und welche von zwei Fassungen neuer ist.
+// Daten: { zustand, sitzungen: [...], buchstabentests: [...], stand }
+// "stand" zählt die Speichervorgänge; beim Vergleich gilt die Fassung mit dem höheren Stand.
+(function (global) {
+  'use strict';
+
+  function leer() { return { zustand: null, sitzungen: [], buchstabentests: [], stand: 0 }; }
+
+  // Rangfolge zweier Fassungen: zuerst der Stand, bei Gleichstand (ältere Daten ohne
+  // Stand) die Zahl der Sitzungen, dann der Buchstabentests, dann ob eine Einrichtung da ist.
+  function rang(d) {
+    var z = d && d.zustand;
+    return [d && d.stand || 0, z ? z.sitzungen : -1, d && d.buchstabentests ? d.buchstabentests.length : 0, z && z.kalibrierung ? 1 : 0];
+  }
+  // Ist Fassung a neuer als Fassung b? Bei völligem Gleichstand: nein.
+  function neuer(a, b) {
+    var ra = rang(a), rb = rang(b);
+    for (var i = 0; i < ra.length; i++) { if (ra[i] !== rb[i]) return ra[i] > rb[i]; }
+    return false;
+  }
+
+  global.SpeicherRegeln = { leer: leer, rang: rang, neuer: neuer };
+})(typeof window !== 'undefined' ? window : this);
+
+</script>
+<script>
+// ===== webapp.js =====
+// Rahmen der Web-App (nur in der Web-App, nicht auf der claude.ai-Seite): meldet den Service
+// Worker an (sw.js legt alle Dateien der Web-App auf dem iPhone ab, damit das Training ohne
+// Internet läuft) und zeigt eine Anleitung „Zum Home-Bildschirm“, wenn die Seite in Safari statt
+// als Web-App geöffnet wird. Aufgerufen von speicher_github.js vor der Einrichtung der Sicherung.
+(function (global) {
+  'use strict';
+  var LS_BROWSER = 'sehtraining-webapp-im-browser';   // „Trotzdem hier in Safari“ gewählt
+
+  // Als Web-App vom Home-Bildschirm geöffnet? (navigator.standalone gibt es nur auf dem iPhone/iPad.)
+  function alsWebApp() {
+    var n = global.navigator, m = global.matchMedia;
+    return n.standalone === true ||
+      !!(m && (m('(display-mode: standalone)').matches || m('(display-mode: fullscreen)').matches));
+  }
+  function imBrowserErlaubt() { try { return global.localStorage.getItem(LS_BROWSER) === '1'; } catch (e) { return false; } }
+
+  function dienstAnmelden() {
+    if (!('serviceWorker' in global.navigator)) return;
+    global.navigator.serviceWorker.register('sw.js').catch(function () { /* dann eben nur mit Internet */ });
+  }
+
+  // Löst auf, sobald es weitergehen kann: sofort in der Web-App, in Safari erst nach
+  // „Trotzdem hier in Safari“ (sonst bleibt die Anleitung stehen).
+  function vorbereiten(ui) {
+    dienstAnmelden();
+    if (alsWebApp() || imBrowserErlaubt()) return Promise.resolve();
+    return new Promise(function (weiter) {
+      ui.textAnsicht('Zuerst auf den Home-Bildschirm', [], null, [
+        'Das Sehtraining ist eine Web-App: mit eigenem Symbol, auf dem ganzen Bildschirm und ohne Internet.',
+        ui.liste([
+          'Unten auf das Teilen-Symbol tippen (Quadrat mit Pfeil nach oben). Bei neuerem iOS erst auf „•••“.',
+          '„Zum Home-Bildschirm“ wählen, eventuell weiter unten in der Liste.',
+          '„Als Web-App öffnen“ eingeschaltet lassen und „Hinzufügen“ tippen.',
+          'Safari schließen und das Sehtraining über das neue Symbol öffnen.'
+        ]),
+        ui.el('button', { type: 'button', class: 'gross', text: 'Trotzdem hier in Safari', onclick: function () {
+          try { global.localStorage.setItem(LS_BROWSER, '1'); } catch (e) { /* dann fragt sie beim nächsten Mal wieder */ }
+          weiter();
+        } }),
+        ui.el('p', { class: 'leise', text: 'Was in Safari geübt wird, bleibt in Safari und erscheint nicht in der Web-App.' })
+      ]);
+    });
+  }
+
+  global.WebApp = { vorbereiten: vorbereiten, alsWebApp: alsWebApp };
+})(window);
+
+</script>
+<script>
+// ===== speicher_github.js =====
+// Speicher der Web-App: Die Daten liegen auf dem iPhone im Browser-Speicher der Web-App.
+// Nach jedem Speichern lädt die Web-App sie im Hintergrund als Datei der Person in ein privates
+// Repository bei GitHub hoch (Sicherung). Niemand wartet darauf: Antwortet GitHub nicht
+// innerhalb der Frist oder fehlt das Internet, wird die Sicherung nachgeholt (beim nächsten
+// Öffnen, wenn das Internet zurückkommt, und sonst jede Minute, solange die Web-App offen ist).
+//
+// Daten wie auf der claude.ai-Seite: { zustand, sitzungen, buchstabentests, stand }.
+// "stand" zählt die Speichervorgänge. Die Datei bei GitHub (daten/<kennung>.json) enthält
+// dieselben Daten und dazu Person und Zeitpunkt. Welche Fassung gilt, entscheidet der Stand
+// (Regeln in speicher_gemeinsam.js); verglichen wird nur, wenn sich die Datei bei GitHub seit
+// dem letzten Hochladen geändert hat (z. B. weil dieselbe Person auf einem zweiten Gerät übt).
+//
+// Einmal je iPhone richtet man die Sicherung ein: Name der Person und Zugangsschlüssel. Der
+// Schlüssel bleibt nur in diesem Gerät (Browser-Speicher) und geht nur an GitHub.
+// Ziel der Sicherung (Besitzer und Name des privaten Repositorys) setzt das Bauwerkzeug als
+// window.SEHTRAINING_ZIEL = { api, besitzer, repo, zweig }, die Fassung des Programms als
+// window.SEHTRAINING_FASSUNG.
+// Schnittstelle wie speicher_claude.js, dazu person(), einstellungen(ui) und beiStatus(f).
+(function (global) {
+  'use strict';
+  var Regeln = global.SpeicherRegeln;
+  var ZIEL = global.SEHTRAINING_ZIEL || { api: 'https://api.github.com', besitzer: '', repo: '', zweig: 'main' };
+  var LS_DATEN = 'sehtraining-webapp-daten';            // Trainingsdaten der Person
+  var LS_META = 'sehtraining-webapp-sicherung';         // Person, Datei und Stand der Sicherung
+  var LS_SCHLUESSEL = 'sehtraining-webapp-schluessel';  // Zugangsschlüssel (nur auf diesem Gerät)
+  var FRIST_MS = 20000;       // so lange wartet die Web-App höchstens auf eine Antwort von GitHub
+  var NACHHOLEN_MS = 60000;   // ohne Internet: nächster Versuch nach einer Minute
+
+  // meta: { person, kennung, sha, gesichertStand, gesichertAm, fehler, konflikt, nachricht, ohneSicherung }
+  //   sha            Kennzeichen der Datei bei GitHub nach dem letzten Hochladen; GitHub nimmt
+  //                  eine neue Fassung nur an, wenn es mitgeschickt wird und noch stimmt
+  //   gesichertStand Stand der Daten, die zuletzt bei GitHub angekommen sind
+  //   fehler         Art des letzten Fehlschlags (netz, frist, schluessel, zugriff, rechte, …)
+  //   konflikt       { stand, am }: bei GitHub liegt eine neuere Fassung; die Person entscheidet
+  var meta = lesen(LS_META) || {};
+  var laeuft = null;          // Promise des laufenden Hochladens, sonst null
+  var nachholen = null;       // Zeitgeber für den nächsten Versuch
+  var hoerer = [];            // Rückrufe bei jeder Änderung des Status (Startseite)
+  var lokalFehler = false;    // Speichern im Browser-Speicher fehlgeschlagen
+  var dauerhaft = null;       // dauerhafter Speicher zugesagt? (true, false, null = unbekannt)
+  var verbunden = false;
+
+  // ---------------------------------------------------------------------------
+  // Kleine Helfer
+  // ---------------------------------------------------------------------------
+  function lesen(k) { try { return JSON.parse(global.localStorage.getItem(k)); } catch (e) { return null; } }
+  function schreiben(k, v) { try { global.localStorage.setItem(k, JSON.stringify(v)); return true; } catch (e) { return false; } }
+  function schluessel() { try { return global.localStorage.getItem(LS_SCHLUESSEL) || null; } catch (e) { return null; } }
+  function schluesselSchreiben(s) { try { global.localStorage.setItem(LS_SCHLUESSEL, s); return true; } catch (e) { return false; } }
+  function eingerichtet() { return !!(meta.kennung && schluessel()); }
+  function jetztIso() { return new Date().toISOString(); }
+  function melden() { hoerer.forEach(function (f) { try { f(); } catch (e) { /* Anzeige ist Nebensache */ } }); }
+  function zweig() { return ZIEL.zweig || 'main'; }
+  function repoName() { return ZIEL.besitzer + '/' + ZIEL.repo; }
+  function repoWeg() { return '/repos/' + encodeURIComponent(ZIEL.besitzer) + '/' + encodeURIComponent(ZIEL.repo); }
+  function dateiWeg(kennung) { return repoWeg() + '/contents/daten/' + kennung + '.json'; }
+
+  // Dateiname aus dem Namen der Person: klein, Umlaute ausgeschrieben, nur a–z, 0–9 und „-“.
+  function kennungAus(name) {
+    var k = String(name || '').toLowerCase().replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss');
+    if (k.normalize) k = k.normalize('NFD').replace(/[̀-ͯ]/g, '');
+    k = k.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
+    return k || null;
+  }
+
+  // GitHub erwartet den Inhalt einer Datei in Base64; der Text ist UTF-8 (Umlaute).
+  function zuBase64(text) { return global.btoa(unescape(encodeURIComponent(text))); }
+  function ausBase64(b64) { return decodeURIComponent(escape(global.atob(String(b64).replace(/\s/g, '')))); }
+
+  // „heute um 20:15“, „gestern um 8:05“, „am 29.10. um 20:15“ (Ortszeit des iPhones).
+  function zeitText(iso) {
+    if (!iso) return 'noch nie';
+    var t = new Date(iso), h = new Date();
+    var uhr = ('0' + t.getHours()).slice(-2) + ':' + ('0' + t.getMinutes()).slice(-2);
+    var tage = Math.round((tagBeginn(h) - tagBeginn(t)) / 864e5);
+    if (tage === 0) return 'heute um ' + uhr;
+    if (tage === 1) return 'gestern um ' + uhr;
+    return 'am ' + ('0' + t.getDate()).slice(-2) + '.' + ('0' + (t.getMonth() + 1)).slice(-2) + '. um ' + uhr;
+  }
+  function tagBeginn(d) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime(); }
+
+  function mengeText(d) {
+    var s = (d.sitzungen || []).length, b = (d.buchstabentests || []).length;
+    return s + (s === 1 ? ' Sitzung, ' : ' Sitzungen, ') + b + (b === 1 ? ' Buchstabentest' : ' Buchstabentests');
+  }
+
+  // ---------------------------------------------------------------------------
+  // Anfragen an GitHub (mit Frist)
+  // ---------------------------------------------------------------------------
+  // Ergebnis: { status, json, text }. Ohne Antwort innerhalb der Frist: Fehler { art: 'frist' },
+  // ohne Verbindung: Fehler { art: 'netz' }. roh = Datei als Text statt als JSON-Beschreibung.
+  function anfrage(methode, weg, koerper, schl, roh) {
+    var opts = { method: methode, cache: 'no-store', headers: {
+      'Accept': roh ? 'application/vnd.github.raw+json' : 'application/vnd.github+json',
+      'Authorization': 'Bearer ' + schl } };
+    if (koerper) { opts.headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(koerper); }
+    var abbruch = typeof AbortController === 'function' ? new AbortController() : null;
+    if (abbruch) opts.signal = abbruch.signal;
+    return new Promise(function (ok, fehler) {
+      var uhr = setTimeout(function () { if (abbruch) abbruch.abort(); fehler({ art: 'frist' }); }, FRIST_MS);
+      global.fetch(ZIEL.api + weg, opts).then(function (antwort) {
+        return antwort.text().then(function (text) {
+          clearTimeout(uhr);
+          var json = null;
+          if (!roh) { try { json = text ? JSON.parse(text) : null; } catch (e) { json = null; } }
+          ok({ status: antwort.status, json: json, text: text });
+        });
+      }).catch(function () { clearTimeout(uhr); fehler({ art: 'netz' }); });
+    });
+  }
+
+  // Inhalt der Datei als Text: dieselben Daten wie im Browser-Speicher, dazu Person und Zeitpunkt.
+  // Eine Angabe je Zeile, damit GitHub Änderungen von Fassung zu Fassung übersichtlich zeigt.
+  function dateiText(d, person) {
+    return JSON.stringify({ person: person, gespeichertAm: jetztIso(), stand: d.stand || 0, zustand: d.zustand || null,
+      sitzungen: d.sitzungen || [], buchstabentests: d.buchstabentests || [] }, null, 1) + '\n';
+  }
+  function ausDatei(f) {
+    return { zustand: f.zustand || null, sitzungen: f.sitzungen || [], buchstabentests: f.buchstabentests || [], stand: f.stand || 0 };
+  }
+
+  // Holt die Datei der Person: { fehlt: true } oder { daten, sha }.
+  async function holen(schl, kennung) {
+    var a = await anfrage('GET', dateiWeg(kennung) + '?ref=' + encodeURIComponent(zweig()), null, schl);
+    if (a.status === 404) return { fehlt: true };
+    if (a.status !== 200 || !a.json) throw { art: 'status', status: a.status };
+    var text;
+    if (a.json.encoding === 'base64' && a.json.content) text = ausBase64(a.json.content);
+    else {
+      // Dateien über 1 MB liefert GitHub in dieser Form ohne Inhalt; dann als Text nachladen.
+      var r = await anfrage('GET', dateiWeg(kennung) + '?ref=' + encodeURIComponent(zweig()), null, schl, true);
+      if (r.status !== 200) throw { art: 'status', status: r.status };
+      text = r.text;
+    }
+    var f;
+    try { f = JSON.parse(text); } catch (e) { throw { art: 'kaputt' }; }
+    return { daten: ausDatei(f), sha: a.json.sha };
+  }
+
+  // Legt die Daten als Datei der Person ab. Mit sha: ersetzt genau diese Fassung (sonst lehnt
+  // GitHub mit 409 oder 422 ab), ohne sha: legt die Datei neu an. Ergebnis: { status, sha }.
+  async function ablegen(d, sha, schl, person, kennung, nachricht) {
+    var koerper = { message: nachricht, content: zuBase64(dateiText(d, person)), branch: zweig() };
+    if (sha) koerper.sha = sha;
+    var a = await anfrage('PUT', dateiWeg(kennung), koerper, schl);
+    return { status: a.status, sha: a.json && a.json.content ? a.json.content.sha : null };
+  }
+
+  var FEHLER = {
+    netz: 'kein Internet oder GitHub nicht erreichbar',
+    frist: 'GitHub hat nicht innerhalb von 20 Sekunden geantwortet',
+    schluessel: 'GitHub nimmt den Zugangsschlüssel nicht an (unvollständig kopiert, abgelaufen oder gelöscht)',
+    zugriff: 'der Zugangsschlüssel hat keinen Zugriff auf das Repository ' + repoName(),
+    rechte: 'der Zugangsschlüssel darf die Datei nicht schreiben (beim Anlegen bei „Contents“ „Read and write“ wählen)',
+    kaputt: 'die Datei bei GitHub ist beschädigt',
+    lokal: 'auf diesem iPhone ließ sich nichts speichern'
+  };
+  function fehlerArt(s) { return s === 401 ? 'schluessel' : s === 403 ? 'rechte' : s === 404 ? 'zugriff' : 'status' + s; }
+  function fehlerAusAusnahme(e) {
+    if (e && e.art === 'status') return fehlerArt(e.status);
+    return e && FEHLER[e.art] ? e.art : 'netz';
+  }
+  function fehlerText(art) { return FEHLER[art] || ('GitHub meldet Fehler ' + String(art).replace('status', '')); }
+
+  // ---------------------------------------------------------------------------
+  // Sicherung im Hintergrund
+  // ---------------------------------------------------------------------------
+  function ausstehend(d) { return !meta.sha || (d.stand || 0) !== meta.gesichertStand; }
+  // Fehler, die von selbst vergehen (kein Internet, keine Antwort, Störung bei GitHub mit 5xx).
+  function voruebergehend(f) { return f === 'netz' || f === 'frist' || /^status5/.test(f || ''); }
+
+  // Startet das Hochladen, falls etwas aussteht. Gibt ein Promise zurück (true = alles gesichert),
+  // das nie fehlschlägt; die Seite muss darauf nicht warten.
+  function hochladen() {
+    if (laeuft) return laeuft;
+    if (!eingerichtet() || meta.konflikt) return Promise.resolve(false);
+    var d = lesen(LS_DATEN);
+    if (!d || !ausstehend(d)) return Promise.resolve(true);
+    if (nachholen) { clearTimeout(nachholen); nachholen = null; }
+    laeuft = einmalHochladen(d).then(function () {
+      laeuft = null;
+      schreiben(LS_META, meta);
+      melden();
+      var neu = lesen(LS_DATEN);
+      // Während des Hochladens neu gespeichert: gleich noch einmal.
+      if (!meta.fehler && !meta.konflikt && neu && ausstehend(neu)) return hochladen();
+      // Kein Internet, keine Antwort oder Störung bei GitHub: später nachholen. Andere Fehler
+      // (Schlüssel, Rechte) brauchen einen Eingriff der Person und werden auf der Startseite gemeldet.
+      if (voruebergehend(meta.fehler)) {
+        nachholen = setTimeout(function () { nachholen = null; hochladen(); }, NACHHOLEN_MS);
+      }
+      return !meta.fehler && !meta.konflikt;
+    });
+    melden();
+    return laeuft;
+  }
+
+  async function einmalHochladen(d) {
+    var schl = schluessel(), nachrichtVorher = meta.nachricht;
+    var nachricht = meta.person + ': ' + (meta.nachricht || 'Stand ' + (d.stand || 0));
+    try {
+      var a = await ablegen(d, meta.sha, schl, meta.person, meta.kennung, nachricht);
+      if (a.status === 409 || a.status === 422 || (a.status === 404 && meta.sha)) {
+        // Die Datei bei GitHub ist nicht mehr die zuletzt hochgeladene (anderes Gerät, oder dort
+        // gelöscht): neu holen und vergleichen. Ist sie neuer, entscheidet die Person.
+        var f = await holen(schl, meta.kennung);
+        if (!f.fehlt && Regeln.neuer(f.daten, d)) {
+          meta.konflikt = { stand: f.daten.stand || 0, am: jetztIso() };
+          meta.fehler = null;
+          return;
+        }
+        a = await ablegen(d, f.fehlt ? null : f.sha, schl, meta.person, meta.kennung, nachricht);
+      }
+      if (a.status === 200 || a.status === 201) {
+        meta.sha = a.sha; meta.gesichertStand = d.stand || 0; meta.gesichertAm = jetztIso(); meta.fehler = null;
+        if (meta.nachricht === nachrichtVorher) meta.nachricht = null;
+      } else {
+        meta.fehler = fehlerArt(a.status);
+      }
+    } catch (e) {
+      meta.fehler = fehlerAusAusnahme(e);
+    }
+  }
+
+  // Bittet das iPhone, den Speicher der Web-App nicht von selbst zu löschen.
+  function dauerhaftBitten() {
+    var s = global.navigator && global.navigator.storage;
+    if (!s || !s.persist || !s.persisted) return;
+    s.persisted().then(function (ja) { return ja || s.persist(); })
+      .then(function (ja) { dauerhaft = !!ja; }, function () { dauerhaft = null; });
+  }
+
+  // ---------------------------------------------------------------------------
+  // Schnittstelle für die Oberfläche (wie speicher_claude.js)
+  // ---------------------------------------------------------------------------
+  // Vor dem ersten Laden: Anleitung „Zum Home-Bildschirm“ (webapp.js), dann einmal je iPhone
+  // die Einrichtung der Sicherung. ui: Ansichten der Oberfläche (textAnsicht, el, liste).
+  async function verbinden(ui) {
+    dauerhaftBitten();
+    if (global.WebApp) await global.WebApp.vorbereiten(ui);
+    if (!eingerichtet() && !meta.ohneSicherung) await einrichten(ui, true);
+    if (!verbunden && global.addEventListener) {
+      verbunden = true;
+      // Internet wieder da oder Web-App wieder im Vordergrund: Ausstehendes nachholen.
+      global.addEventListener('online', function () { hochladen(); });
+      if (global.document) global.document.addEventListener('visibilitychange', function () {
+        if (global.document.visibilityState === 'visible') hochladen();
+      });
+    }
+  }
+
+  // Die Daten liegen auf dem iPhone; geladen wird ohne Warten. Eine ausstehende Sicherung
+  // (z. B. vom letzten Mal ohne Internet) läuft dabei im Hintergrund an.
+  function laden() {
+    var d = lesen(LS_DATEN) || Regeln.leer();
+    hochladen();
+    return Promise.resolve(d);
+  }
+
+  // Speichert sofort auf dem iPhone und stößt die Sicherung an; wartet nicht auf GitHub.
+  function sichern(d, neueSitzung, neuerTest) {
+    d.stand = (d.stand || 0) + 1;
+    lokalFehler = !schreiben(LS_DATEN, d);
+    meta.nachricht = neueSitzung ? 'Sitzung ' + neueSitzung.nr + ' am ' + neueSitzung.datum
+      : neuerTest ? 'Buchstabentest ' + neuerTest.nr + ' am ' + neuerTest.datum : 'Einstellungen';
+    schreiben(LS_META, meta);
+    hochladen();
+    melden();
+    return Promise.resolve(!lokalFehler);
+  }
+
+  function status() {
+    if (lokalFehler) return 'Speichern auf diesem iPhone fehlgeschlagen (Speicher voll?)';
+    if (!eingerichtet()) return 'nur auf diesem iPhone, Sicherung nicht eingerichtet';
+    if (meta.konflikt) return 'bei GitHub liegt eine neuere Fassung, bitte „Sicherung“ öffnen';
+    var d = lesen(LS_DATEN), zuletzt = 'zuletzt ' + zeitText(meta.gesichertAm);
+    if (!d || !ausstehend(d)) return 'bei GitHub gesichert ' + zeitText(meta.gesichertAm);
+    if (laeuft) return 'wird bei GitHub gesichert … (' + zuletzt + ')';
+    if (voruebergehend(meta.fehler)) return 'auf dem iPhone; Sicherung folgt, sobald GitHub erreichbar ist (' + zuletzt + ')';
+    if (meta.fehler) return 'Sicherung gescheitert: ' + fehlerText(meta.fehler) + '. Bitte „Sicherung“ öffnen';
+    return 'wird bei GitHub gesichert … (' + zuletzt + ')';
+  }
+
+  // ---------------------------------------------------------------------------
+  // Einrichtung der Sicherung (einmal je iPhone) und Ansicht „Sicherung“
+  // ---------------------------------------------------------------------------
+  // Prüft Schlüssel und Repository, holt die Datei der Person, entscheidet nach dem Stand,
+  // welche Fassung gilt, und legt sie bei GitHub ab (das ist zugleich die Schreibprobe).
+  // Erst wenn alles geklappt hat, werden Schlüssel, Daten und Person auf dem iPhone übernommen.
+  // Ergebnis { art, daten }: art = 'neu' (Datei angelegt), 'github' (Daten von GitHub geholt),
+  // 'iphone' (Daten des iPhones waren neuer und sind hochgeladen).
+  async function einrichtenPruefen(name, kennung, schl) {
+    var repo = await anfrage('GET', repoWeg(), null, schl);
+    if (repo.status !== 200) throw { art: 'status', status: repo.status, beim: 'repo' };
+    var f = await holen(schl, kennung);
+    var lokal = lesen(LS_DATEN) || Regeln.leer(), art;
+    if (f.fehlt) art = 'neu';
+    else if (Regeln.neuer(lokal, f.daten)) art = 'iphone';
+    else { art = 'github'; lokal = f.daten; }
+    var a = await ablegen(lokal, f.fehlt ? null : f.sha, schl, name, kennung, name + ': Einrichtung auf einem Gerät');
+    if (a.status !== 200 && a.status !== 201) throw { art: 'status', status: a.status, beim: 'schreiben' };
+    if (!schreiben(LS_DATEN, lokal) || !schluesselSchreiben(schl)) throw { art: 'lokal' };
+    meta = { person: name, kennung: kennung, sha: a.sha, gesichertStand: lokal.stand || 0, gesichertAm: jetztIso(),
+      fehler: null, konflikt: null, nachricht: null };
+    schreiben(LS_META, meta);
+    melden();
+    return { art: art, daten: lokal };
+  }
+
+  function einrichtenFehler(e) {
+    if (e && e.art === 'netz') return 'Keine Verbindung zu GitHub. Ist das iPhone mit dem Internet verbunden?';
+    if (e && e.art === 'frist') return 'GitHub hat nicht innerhalb von 20 Sekunden geantwortet. Bitte noch einmal versuchen.';
+    if (e && e.art === 'status' && e.status === 401) return 'GitHub nimmt den Schlüssel nicht an. Ist er vollständig kopiert?';
+    if (e && e.art === 'status' && e.status === 404 && e.beim === 'repo') return 'Der Schlüssel hat keinen Zugriff auf das Repository ' +
+      repoName() + '. Beim Anlegen unter „Repository access“ genau dieses Repository wählen.';
+    if (e && e.art === 'status' && (e.status === 403 || e.status === 404)) return 'Der Schlüssel darf die Datei nicht lesen oder ' +
+      'nicht schreiben. Beim Anlegen unter „Permissions“ bei „Contents“ „Read and write“ wählen.';
+    return 'Das hat nicht geklappt: ' + fehlerText(fehlerAusAusnahme(e)) + '.';
+  }
+
+  // Ansicht zum Einrichten. erstmals: beim ersten Öffnen (mit „Ohne Sicherung weiter“).
+  // Ist die Person schon festgelegt, wird nur der Schlüssel ersetzt; die Person bleibt.
+  // Löst mit true auf, wenn eingerichtet, sonst mit false.
+  function einrichten(ui, erstmals) {
+    return new Promise(function (fertig) {
+      var personFest = !!meta.kennung, name = meta.person || '', schlText = '', hinweis = null;
+      zeigen();
+
+      function knopf(text, haupt, beiKlick) {
+        return ui.el('button', { type: 'button', class: 'gross' + (haupt ? ' haupt' : ''), text: text, onclick: beiKlick });
+      }
+      function zeigen() {
+        var feldName = null, teile = [];
+        teile.push(personFest ? 'Neuen Zugangsschlüssel einfügen. Person und Daten bleiben, wie sie sind.'
+          : 'Einmal je iPhone: Wer übt hier, und der Zugangsschlüssel für GitHub. Danach sichert die Web-App nach jedem Speichern von selbst.');
+        if (personFest) teile.push(ui.el('p', { text: 'Person: ' + meta.person }));
+        else {
+          teile.push(ui.el('label', { for: 'sicherung-name', class: 'feld-titel', text: 'Name der Person' }));
+          feldName = ui.el('input', { id: 'sicherung-name', class: 'eingabe', type: 'text', autocomplete: 'off',
+            autocapitalize: 'words', spellcheck: 'false', value: name });
+          teile.push(feldName);
+        }
+        teile.push(ui.el('label', { for: 'sicherung-schluessel', class: 'feld-titel', text: 'Zugangsschlüssel (einfügen)' }));
+        var feldSchl = ui.el('input', { id: 'sicherung-schluessel', class: 'eingabe eingabe-klein', type: 'text', autocomplete: 'off',
+          autocapitalize: 'off', autocorrect: 'off', spellcheck: 'false', placeholder: 'github_pat_…', value: schlText });
+        teile.push(feldSchl);
+        if (hinweis) teile.push(ui.el('p', { class: 'hinweis', text: hinweis }));
+        teile.push(knopf('Prüfen und weiter', true, function () {
+          pruefen(feldName ? feldName.value : meta.person, feldSchl.value);
+        }));
+        teile.push(erstmals ? knopf('Ohne Sicherung weiter', false, ohne) : knopf('Zurück', false, function () { fertig(false); }));
+        ui.textAnsicht(personFest ? 'Schlüssel ersetzen' : 'Sicherung einrichten', [], null, teile);
+      }
+      function ohne() { meta.ohneSicherung = true; schreiben(LS_META, meta); fertig(false); }
+      async function pruefen(n, s) {
+        name = String(n || '').trim();
+        schlText = String(s || '').replace(/\s+/g, '');   // beim Kopieren kommen oft Leerzeichen oder Umbrüche mit
+        var kennung = personFest ? meta.kennung : kennungAus(name);
+        if (!kennung) { hinweis = 'Bitte den Namen der Person eintragen.'; return zeigen(); }
+        if (!schlText) { hinweis = 'Bitte den Zugangsschlüssel einfügen.'; return zeigen(); }
+        ui.textAnsicht('Wird geprüft …', [], null, ['Die Web-App fragt bei GitHub nach. Das dauert höchstens 20 Sekunden.']);
+        try {
+          var e = await einrichtenPruefen(name, kennung, schlText);
+          var satz = {
+            neu: 'Für diese Person gab es noch keine Datei bei GitHub; sie ist jetzt angelegt.',
+            github: 'Die Daten von GitHub sind jetzt auf diesem iPhone.',
+            iphone: 'Die Daten auf diesem iPhone waren neuer und sind jetzt bei GitHub.'
+          }[e.art];
+          ui.textAnsicht('Sicherung eingerichtet', [['Person', name], ['Datei', 'daten/' + kennung + '.json'], ['Daten', mengeText(e.daten)]],
+            function () { fertig(true); }, [satz, 'Ab jetzt sichert die Web-App nach jedem Speichern von selbst.']);
+        } catch (f) {
+          hinweis = einrichtenFehler(f);
+          zeigen();
+        }
+      }
+    });
+  }
+
+  // Bei einem Konflikt: die Fassung von GitHub auf dieses iPhone holen.
+  async function githubUebernehmen() {
+    var f = await holen(schluessel(), meta.kennung);
+    if (f.fehlt) throw { art: 'status', status: 404 };
+    if (!schreiben(LS_DATEN, f.daten)) throw { art: 'lokal' };
+    meta.sha = f.sha; meta.gesichertStand = f.daten.stand || 0; meta.gesichertAm = jetztIso();
+    meta.konflikt = null; meta.fehler = null; meta.nachricht = null;
+    schreiben(LS_META, meta);
+    melden();
+  }
+  // Bei einem Konflikt: die Fassung dieses iPhones behalten und bei GitHub ersetzen. Ihr Stand
+  // wird über den der Datei bei GitHub gehoben, damit sie auch künftig als neuer gilt.
+  async function iphoneBehalten() {
+    var f = await holen(schluessel(), meta.kennung);
+    var d = lesen(LS_DATEN) || Regeln.leer();
+    if (!f.fehlt && (d.stand || 0) <= (f.daten.stand || 0)) { d.stand = (f.daten.stand || 0) + 1; schreiben(LS_DATEN, d); }
+    meta.sha = f.fehlt ? null : f.sha; meta.gesichertStand = null; meta.konflikt = null; meta.fehler = null;
+    meta.nachricht = 'Fassung dieses Geräts behalten';
+    schreiben(LS_META, meta);
+    return hochladen();
+  }
+  // „Jetzt sichern“: Ausstehendes hochladen; ist nichts offen, die Verbindung prüfen und
+  // nachsehen, ob die Datei bei GitHub noch die zuletzt hochgeladene ist.
+  async function jetztSichern() {
+    var d = lesen(LS_DATEN) || Regeln.leer();
+    if (ausstehend(d)) return hochladen();
+    try {
+      var f = await holen(schluessel(), meta.kennung);
+      if (!f.fehlt && f.sha === meta.sha) { meta.fehler = null; schreiben(LS_META, meta); melden(); return true; }
+      if (!f.fehlt && Regeln.neuer(f.daten, d)) meta.konflikt = { stand: f.daten.stand || 0, am: jetztIso() };
+      else meta.sha = f.fehlt ? null : f.sha;
+      meta.gesichertStand = null;
+      schreiben(LS_META, meta);
+      return hochladen();
+    } catch (e) {
+      meta.fehler = fehlerAusAusnahme(e);
+      schreiben(LS_META, meta);
+      melden();
+      return false;
+    }
+  }
+
+  // Ansicht „Sicherung“ (Knopf auf der Startseite). Löst auf, wenn die Person zurückgeht;
+  // danach lädt die Oberfläche die Daten neu (sie können sich hier geändert haben).
+  function einstellungen(ui) {
+    return new Promise(function (fertig) {
+      zeigen(null);
+      function knopf(text, haupt, beiKlick) {
+        return ui.el('button', { type: 'button', class: 'gross' + (haupt ? ' haupt' : ''), text: text, onclick: beiKlick });
+      }
+      function warten(titel, arbeit, erfolg) {
+        ui.textAnsicht(titel, [], null, ['Das dauert höchstens 20 Sekunden.']);
+        Promise.resolve().then(arbeit).then(function (ok) {
+          zeigen(ok === false ? null : erfolg);
+        }, function (e) { zeigen('Das hat nicht geklappt: ' + fehlerText(fehlerAusAusnahme(e)) + '.'); });
+      }
+      function zeigen(meldung) {
+        var d = lesen(LS_DATEN) || Regeln.leer(), paare = [], teile = [];
+        if (eingerichtet()) {
+          paare.push(['Person', meta.person]);
+          paare.push(['Datei', 'daten/' + meta.kennung + '.json in ' + repoName()]);
+          paare.push(['Gesichert', zeitText(meta.gesichertAm)]);
+        }
+        paare.push(['Auf dem iPhone', mengeText(d) + ', Stand ' + (d.stand || 0)]);
+        paare.push(['Dauerhafter Speicher', dauerhaft === true ? 'zugesagt' : dauerhaft === false ? 'nicht zugesagt' : 'unbekannt']);
+        paare.push(['Programm', global.SEHTRAINING_FASSUNG || '–']);
+        if (!meta.konflikt) teile.push(ui.el('p', { text: 'Daten: ' + status() + '.' }));
+        if (meldung) teile.push(ui.el('p', { class: 'hinweis', text: meldung }));
+        if (eingerichtet() && meta.konflikt) {
+          teile.push(ui.el('p', { text: 'Bei GitHub liegt eine neuere Fassung (Stand ' + meta.konflikt.stand + ') als auf diesem iPhone (Stand ' +
+            (d.stand || 0) + '). Das kommt vor, wenn dieselbe Person auch auf einem anderen Gerät übt. Welche Fassung soll gelten? ' +
+            'Die andere wird ersetzt.' }));
+          teile.push(knopf('Fassung von GitHub nehmen', true, function () {
+            warten('Wird geholt …', githubUebernehmen, 'Die Fassung von GitHub ist jetzt auf diesem iPhone.');
+          }));
+          teile.push(knopf('Fassung dieses iPhones behalten', false, function () {
+            warten('Wird gesichert …', iphoneBehalten, 'Die Fassung dieses iPhones ist jetzt bei GitHub.');
+          }));
+        } else if (eingerichtet()) {
+          teile.push(knopf('Jetzt sichern', true, function () { warten('Wird gesichert …', jetztSichern, 'Alles ist bei GitHub gesichert.'); }));
+        }
+        if (eingerichtet()) teile.push(knopf('Schlüssel ersetzen', false, function () { einrichten(ui, false).then(function () { zeigen(null); }); }));
+        else teile.push(knopf('Sicherung einrichten', true, function () { einrichten(ui, true).then(function () { zeigen(null); }); }));
+        teile.push(knopf('Zurück', false, function () { fertig(); }));
+        ui.textAnsicht('Sicherung', paare, null, teile);
+      }
+    });
+  }
+
+  global.Speicher = {
+    verbinden: verbinden, laden: laden, sichern: sichern, status: status,
+    abgleich: function () { return laeuft || Promise.resolve(); },
+    person: function () { return meta.kennung ? meta.person : null; },
+    einstellungen: einstellungen,
+    beiStatus: function (f) { hoerer.push(f); },
+    // nur für Tests
+    _kennungAus: kennungAus, _zeitText: zeitText, _einrichtenPruefen: einrichtenPruefen, _hochladen: hochladen,
+    _jetztSichern: jetztSichern, _githubUebernehmen: githubUebernehmen, _iphoneBehalten: iphoneBehalten,
+    _meta: function () { return meta; }, _neuLesen: function () { meta = lesen(LS_META) || {}; lokalFehler = false; },
+    _fristSetzen: function (frist, nachholenMs) { FRIST_MS = frist; NACHHOLEN_MS = nachholenMs; }
+  };
+})(typeof window !== 'undefined' ? window : this);
+
+</script>
+<script>
+// ===== app.js =====
+// Oberfläche und Ablauf des Sehtrainings: Übersicht, Einrichtung, Sitzung, Verlauf, Daten.
+// Rechenregeln stehen in logik.js, das Zeichnen der Reize in reize.js, der
+// Buchstabentest in buchstabentest.js, die Einrichtung des Bildschirms in kalibrierung.js.
+(function () {
+  'use strict';
+  var L = window.Logik, R = window.Reize;
+
+  // Speicher: je nach Fassung speicher_claude.js (Datenbank der claude.ai-Seite) oder
+  // speicher_github.js (Web-App, Sicherung bei GitHub); beide mit derselben Schnittstelle.
+  var Speicher = window.Speicher;
+
+  // ---------------------------------------------------------------------------
+  // Hilfen
+  // ---------------------------------------------------------------------------
+  var daten = null;                       // geladene Daten
+  var VORGABE_KAL = { mmProPunkt: 0.1657, gamma: 2.2, grauHalb: null, hz: 60, datum: null };
+  var $ = function (id) { return document.getElementById(id); };
+  function heute() {
+    var d = new Date();
+    return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
+  }
+  function datumText(iso) { if (!iso) return '–'; var t = iso.split('-'); return t[2] + '.' + t[1] + '.' + t[0]; }
+  function zahl(x, stellen) { return x.toFixed(stellen).replace('.', ','); }
+  function el(tag, attrs, kinder) {
+    var e = document.createElement(tag);
+    if (attrs) Object.keys(attrs).forEach(function (k) {
+      if (k === 'text') e.textContent = attrs[k];
+      else if (k === 'onclick') e.addEventListener('click', attrs[k]);
+      else e.setAttribute(k, attrs[k]);
+    });
+    (kinder || []).forEach(function (k) { if (k) e.appendChild(typeof k === 'string' ? document.createTextNode(k) : k); });
+    return e;
+  }
+  function zeigeAnsicht(id) {
+    ['ansicht-start', 'ansicht-modul', 'ansicht-sitzung', 'ansicht-text'].forEach(function (a) { $(a).hidden = a !== id; });
+    document.body.classList.toggle('training', id === 'ansicht-sitzung');
+  }
+  function kal() { return daten.zustand.kalibrierung || VORGABE_KAL; }
+
+  // Ton für die Rückmeldung (startet erst nach dem ersten Antippen).
+  var ton = null;
+  function piep(richtig) {
+    try {
+      if (!ton) ton = new (window.AudioContext || window.webkitAudioContext)();
+      var o = ton.createOscillator(), g = ton.createGain();
+      o.frequency.value = richtig ? 880 : 220;
+      g.gain.setValueAtTime(0.0001, ton.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.25, ton.currentTime + 0.01);
+      g.gain.exponentialRampToValueAtTime(0.0001, ton.currentTime + (richtig ? 0.09 : 0.18));
+      o.connect(g); g.connect(ton.destination); o.start(); o.stop(ton.currentTime + 0.2);
+    } catch (e) { /* ohne Ton weiter */ }
+  }
+  // Schriftgröße: Grundgröße aller Texte in Punkten, je Gerät im Browser gemerkt
+  // (eine Bequemlichkeit, keine Trainingsdaten). Die Reize und die Buchstaben des
+  // Buchstabentests haben ihre eigene, feste Größe und ändern sich dadurch nicht.
+  var SCHRIFT_LS = 'sehtraining-schrift', SCHRIFT_VORGABE = 28, SCHRIFT_MIN = 18, SCHRIFT_MAX = 36;
+  function schriftSetzen(px, merken) {
+    px = Math.max(SCHRIFT_MIN, Math.min(SCHRIFT_MAX, Math.round(px)));
+    document.documentElement.style.fontSize = px + 'px';
+    engPruefen();
+    if (merken) { try { localStorage.setItem(SCHRIFT_LS, String(px)); } catch (e) { /* ohne Merken weiter */ } }
+    return px;
+  }
+  // Weniger als 20 Schriftgrößen Breite (iPhone ab etwa 20 Punkten Schrift): Wertepaare untereinander.
+  function engPruefen() {
+    var px = parseFloat(document.documentElement.style.fontSize) || SCHRIFT_VORGABE;
+    document.documentElement.classList.toggle('eng', window.innerWidth < 20 * px);
+  }
+  window.addEventListener('resize', engPruefen);
+  var schrift = SCHRIFT_VORGABE;
+  try { schrift = parseInt(localStorage.getItem(SCHRIFT_LS), 10) || SCHRIFT_VORGABE; } catch (e) { schrift = SCHRIFT_VORGABE; }
+  schrift = schriftSetzen(schrift, false);
+
+  var wachSperre = null;
+  async function wachHalten(an) {
+    try {
+      if (an && navigator.wakeLock) wachSperre = await navigator.wakeLock.request('screen');
+      else if (!an && wachSperre) { await wachSperre.release(); wachSperre = null; }
+    } catch (e) { wachSperre = null; }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Übersicht
+  // ---------------------------------------------------------------------------
+  function zeigeStart() {
+    zeigeAnsicht('ansicht-start');
+    var z = daten.zustand, plan = L.naechsteSitzung(z);
+    var heuteSchon = z.letztesDatum === heute();
+    var art = { eingang1: 'Eingangssitzung 1 von 2', eingang2: 'Eingangssitzung 2 von 2', training: 'Training ' + plan.trainingNr }[plan.art];
+    $('naechste-art').textContent = art;
+    var details = [];
+    if (plan.art === 'eingang1') {
+      details.push(['Inhalt', 'Buchstabentest und vier Messungen von grob bis fein']);
+    } else {
+      details.push(['Feinheit', plan.feinheit + ' Streifenpaare je Grad']);
+      details.push(['Streifen', L.ausrichtungName(plan.ausrichtung)]);
+      details.push(['Flanker', plan.abstand + ' Wellenlängen entfernt']);
+      details.push(['Ziel zu sehen', L.ms(plan.dauerBilder) + ' ms']);
+      details.push(['Pause bis zur Maske', L.ms(plan.pauseBilder) + ' ms']);
+      if (plan.buchstabentest) details.push(['Vorher', 'Buchstabentest']);
+    }
+    var dl = $('naechste-details'); dl.textContent = '';
+    details.forEach(function (p) { dl.appendChild(el('dt', { text: p[0] })); dl.appendChild(el('dd', { text: p[1] })); });
+
+    var ohneEinrichtung = !z.kalibrierung;
+    $('hinweis-einrichtung').hidden = !ohneEinrichtung;
+    $('hinweis-heute').hidden = !heuteSchon;
+    $('knopf-sitzung').disabled = ohneEinrichtung || heuteSchon;
+    $('stand-sitzungen').textContent = z.trainingssitzungen + ' von mindestens ' + L.MINDEST_SITZUNGEN;
+    var bt = daten.buchstabentests;
+    $('stand-visus').textContent = bt.length ? ('Visus ' + zahl(bt[bt.length - 1].visus, 2) + ' am ' + datumText(bt[bt.length - 1].datum)) : 'noch nicht gemessen';
+    zeigeSpeicherStand();
+  }
+
+  // Zeile „Daten“ der Startseite (in der Web-App mit dem Zeitpunkt der letzten Sicherung) und,
+  // wenn der Speicher eine Person kennt (Web-App), die Zeile „Person“.
+  function zeigeSpeicherStand() {
+    $('stand-speicher').textContent = Speicher.status();
+    var person = Speicher.person ? Speicher.person() : null;
+    $('stand-person').textContent = person || '–';
+    $('stand-person').hidden = $('stand-person-titel').hidden = !person;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Module in eigener Ansicht (Einrichtung, Buchstabentest)
+  // ---------------------------------------------------------------------------
+  function modulContainer() {
+    zeigeAnsicht('ansicht-modul');
+    var c = $('ansicht-modul'); c.textContent = '';
+    var innen = el('div', { class: 'modul-flaeche' }); c.appendChild(innen);
+    return innen;
+  }
+
+  // Einrichtung: Übersicht, dann Prüfliste, Größe, Helligkeitskennlinie, Bildtakt nacheinander.
+  function einrichtung() {
+    var neu = JSON.parse(JSON.stringify(kal()));
+    textAnsicht('Einrichtung', [], schritte, [
+      el('p', { class: 'hinweis', text: 'Für die Einrichtung darfst du jede Brille tragen, auch die Lesebrille. ' +
+        'Nur beim Buchstabentest und im Training keine Lesehilfe.' }),
+      'Die Einrichtung stellt die Seite einmal auf dein iPhone ein, damit Größe und Kontrast der Streifen stimmen. ' +
+      'Sie hat vier Schritte und dauert etwa fünf Minuten.',
+      liste([
+        'Einstellungen am iPhone prüfen und abhaken.',
+        'Größe: Dafür brauchst du eine Karte im Scheckkartenformat, z. B. Bankkarte oder Personalausweis. Leg sie bereit.',
+        'Helligkeit: zwei Felder gleich hell einstellen, zweimal hintereinander.',
+        'Bildtakt: Das misst das iPhone allein in zwei Sekunden.'
+      ]),
+      'Wiederhole die Einrichtung, wenn du eine Einstellung am iPhone änderst oder ein anderes Gerät nimmst.'
+    ], 'Los', zeigeStart);
+
+    function schritte() {
+      window.Kalibrierung.pruefliste(modulContainer(), function () {
+        window.Kalibrierung.groesse(modulContainer(), neu.mmProPunkt, function (mm) {
+          if (mm) neu.mmProPunkt = mm;
+          window.Kalibrierung.kennlinie(modulContainer(), function (k) {
+            if (k) { neu.gamma = k.gamma; neu.grauHalb = k.grauHalb; }
+            textAnsicht('Schritt 4 von 4: Bildtakt', [], null, [
+              'Das iPhone misst jetzt allein, wie oft es das Bild erneuert. Das dauert etwa zwei Sekunden. Bitte nichts antippen.']);
+            window.Kalibrierung.bildtakt(2000, async function (b) {
+              neu.hz = b && b.hz ? b.hz : 60;
+              neu.datum = heute();
+              daten.zustand.kalibrierung = neu;
+              await speichernMitAnzeige();
+              var warn = Math.abs(neu.hz - 60) > 3 && Math.abs(neu.hz - 120) > 5;
+              textAnsicht('Einrichtung fertig', [
+                ['Größe', zahl(neu.mmProPunkt, 4) + ' mm je Punkt'],
+                ['Helligkeit', 'Gamma ' + zahl(neu.gamma, 2)],
+                ['Bildtakt', zahl(neu.hz, 1) + ' Bilder je Sekunde' + (warn ? ' – ungewöhnlich, Stromsparmodus prüfen' : '')]
+              ], zeigeStart, ['Daten: ' + Speicher.status() + '.']);
+            });
+          });
+        });
+      });
+    }
+  }
+
+  // Zeigt „Wird gespeichert“, solange das Speichern läuft (höchstens etwa zehn Sekunden).
+  async function speichernMitAnzeige(neueSitzung, neuerTest) {
+    textAnsicht('Wird gespeichert …', []);
+    return Speicher.sichern(daten, neueSitzung, neuerTest);
+  }
+
+  // Nummerierte Liste aus Texten.
+  function liste(punkte) {
+    return el('ol', { class: 'schritte' }, punkte.map(function (p) { return el('li', { text: p }); }));
+  }
+
+  function buchstabentest(fertig) {
+    window.Buchstabentest.starten(modulContainer(), { mmProPunkt: kal().mmProPunkt, abstandMm: R.ABSTAND_MM, startLogmar: 0.8 }, function (erg) {
+      fertig(erg);
+    });
+  }
+
+  async function buchstabentestSpeichern(erg) {
+    if (!erg) return null;
+    var t = {
+      nr: daten.buchstabentests.length + 1, datum: heute(), logmar: erg.logmar, visus: erg.visus,
+      richtig: erg.richtig, gezeigt: erg.gezeigt, dauerS: erg.dauerS,
+      zeilen: (erg.zeilen || []).map(function (z) { return { logmar: z.logmar, buchstaben: z.buchstaben, antworten: z.antworten, richtig: z.richtig }; }),
+      nachTraining: daten.zustand.trainingssitzungen
+    };
+    daten.buchstabentests.push(t);
+    daten.zustand.buchstabentests = daten.buchstabentests.length;
+    await speichernMitAnzeige(null, t);
+    return t;
+  }
+
+  // Einfache Textansicht mit Wertepaaren, Zusatztexten, einem Weiter-Knopf (Beschriftung
+  // knopfText, sonst „Weiter“) und auf Wunsch einem Zurück-Knopf darunter.
+  function textAnsicht(titel, paare, weiter, zusatz, knopfText, zurueck) {
+    zeigeAnsicht('ansicht-text');
+    var c = $('ansicht-text'); c.textContent = '';
+    var box = el('div', { class: 'text-box' });
+    box.appendChild(el('h2', { text: titel }));
+    if (paare.length) {
+      var dl = el('dl', { class: 'werte' });
+      paare.forEach(function (p) { dl.appendChild(el('dt', { text: p[0] })); dl.appendChild(el('dd', { text: p[1] })); });
+      box.appendChild(dl);
+    }
+    (zusatz || []).forEach(function (z) { box.appendChild(typeof z === 'string' ? el('p', { text: z }) : z); });
+    if (weiter) box.appendChild(el('button', { class: 'gross haupt', type: 'button', text: knopfText || 'Weiter', onclick: weiter }));
+    if (zurueck) box.appendChild(el('button', { class: 'gross', type: 'button', text: 'Zurück', onclick: zurueck }));
+    c.appendChild(box);
+    window.scrollTo(0, 0);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Sitzung
+  // ---------------------------------------------------------------------------
+  var lauf = null;   // laufende Sitzung
+
+  function sitzungBeginnen(probe) {
+    var plan = L.naechsteSitzung(daten.zustand);
+    if (probe) {
+      // Probelauf: eine kurze Folge mit festen Einstellungen, nichts wird gespeichert.
+      plan = { art: 'probe', nr: 0, feinheit: 2, ausrichtung: 0, abstand: 3, pauseBilder: 9, dauerBilder: 7,
+        bloecke: [{ bedingung: 'ziel', feinheit: 2, vorwert: -0.7 }, { bedingung: 'flanker_maske', feinheit: 2, vorwert: -0.7 }],
+        buchstabentest: false, probe: true };
+    }
+    lauf = { plan: plan, block: 0, treppen: [], start: Date.now(), zeitfehler: 0, untergrenze: false, test: null, pause: false };
+    wachHalten(true);
+    if (plan.buchstabentest) {
+      buchstabentest(async function (erg) {
+        lauf.test = await buchstabentestSpeichern(erg);
+        blockVorstellen();
+      });
+    } else blockVorstellen();
+  }
+
+  function blockVorstellen() {
+    var p = lauf.plan, b = p.bloecke[lauf.block];
+    zeigeAnsicht('ansicht-sitzung');
+    $('sitzung-info').textContent = 'Block ' + (lauf.block + 1) + ' von ' + p.bloecke.length;
+    $('sitzung-meldung').hidden = false;
+    // Kurz genug, dass die Meldung bei 28 Punkten Schrift ohne Schieben passt (gelesen wird ohne
+    // Lesebrille); die Markierung der Abschnitte wird nur im ersten Block erklärt.
+    $('sitzung-meldung-titel').textContent = L.BEDINGUNG_NAME[b.bedingung] +
+      (p.art === 'eingang1' ? ', Feinheit ' + b.feinheit : '');
+    $('sitzung-meldung-text').textContent = lauf.block === 0
+      ? 'Der Fleck ist nur in einem der zwei Abschnitte. Unten leuchtet dazu 1 oder 2. Schau zur Mitte und tippe 1 oder 2, im Zweifel raten.'
+      : 'Wie eben: auf die Mitte schauen, dann 1 oder 2 tippen.';
+    $('antworten').hidden = true;
+    lauf.treppe = L.neueTreppe(b.vorwert);
+    lauf.zeichner = R.zeichner($('reiz'), kal(), b.feinheit, p.ausrichtung, p.abstand);
+    document.documentElement.style.setProperty('--grau', lauf.zeichner.grauText);
+    lauf.zeichner.zeige(null, false);
+    lauf.teile = vorbereitenBlock(b.bedingung);
+  }
+
+  // Bilder, die sich im Block nicht ändern: Bild ohne Ziel und die Maske.
+  function vorbereitenBlock(bedingung) {
+    var z = lauf.zeichner, cf = z.flankerKontrast;
+    var mitFlankern = bedingung === 'flanker' || bedingung === 'flanker_maske';
+    var mitMaske = bedingung === 'maske' || bedingung === 'flanker_maske';
+    return {
+      mitFlankern: mitFlankern,
+      ohne: mitFlankern ? z.bild(0, cf, 7) : null,
+      maske: mitMaske ? z.bild(0, cf, 11) : null
+    };
+  }
+
+  function durchgang() {
+    if (lauf.pause) return;
+    var p = lauf.plan, t = lauf.treppe, z = lauf.zeichner, k = kal();
+    var hz = k.hz && Math.abs(k.hz - 120) < 5 ? 120 : 60;
+    var faktor = hz / 60;
+    var cz = Math.pow(10, t.logc);
+    var zielBild = z.bild(cz, lauf.teile.mitFlankern ? z.flankerKontrast : 0, (Math.random() * 1e9) | 0);
+    var zielAbschnitt = Math.random() < 0.5 ? 0 : 1;
+    var zeiten = { dauer: p.dauerBilder * faktor, pause: p.pauseBilder * faktor, ring: 12 * faktor, leer: 18 * faktor,
+      zwischen: 30 * faktor, zitterMax: 60 * faktor, nachlauf: 12 * faktor };
+    var folge = R.folgeDurchgang({ ziel: zielBild, ohne: lauf.teile.ohne, maske: lauf.teile.maske }, zeiten, zielAbschnitt, Math.random);
+    $('antworten').hidden = false;
+    setzeAntwortKnoepfe(false);
+    R.abspielen(z, folge, hz, function (ergebnis) {
+      lauf.letzter = { zielAbschnitt: zielAbschnitt, zeitfehler: ergebnis.zeitfehler, dauernMs: ergebnis.dauernMs, folge: folge.map(function (f) { return f.bilder; }) };
+      lauf.letzteDauern = lauf.letzter;
+      setzeAntwortKnoepfe(true);
+    }, markiereAbschnitt);
+  }
+
+  function setzeAntwortKnoepfe(an) { $('antwort-1').disabled = !an; $('antwort-2').disabled = !an; }
+
+  // Während eines Abschnitts leuchtet sein Antwortknopf (1 bzw. 2) auf.
+  function markiereAbschnitt(n) {
+    $('antwort-1').classList.toggle('leuchtet', n === 0);
+    $('antwort-2').classList.toggle('leuchtet', n === 1);
+  }
+
+  function antwort(abschnitt) {
+    if (!lauf || !lauf.letzter) return;
+    var richtig = abschnitt === lauf.letzter.zielAbschnitt;
+    var zeitfehler = lauf.letzter.zeitfehler;
+    lauf.letzter = null;
+    setzeAntwortKnoepfe(false);
+    piep(richtig);
+    lauf.zeichner.zeige(null, richtig ? '#7fd88a' : '#f07a6a');
+    if (zeitfehler) {
+      // Durchgang mit ausgelassenem Bild zählt nicht und wird mit gleichem Kontrast wiederholt.
+      lauf.zeitfehler += 1;
+    } else {
+      L.treppeAntwort(lauf.treppe, richtig);
+    }
+    setTimeout(function () {
+      lauf.zeichner.zeige(null, false);
+      if (lauf.treppe.fertig) blockFertig(); else durchgang();
+    }, 350);
+  }
+
+  function blockFertig() {
+    var t = lauf.treppe, b = lauf.plan.bloecke[lauf.block];
+    if (t.grund === 'untergrenze') lauf.untergrenze = true;
+    lauf.treppen.push({
+      bedingung: b.bedingung, feinheit: b.feinheit, schwelle: L.schwelle(t), grund: t.grund,
+      durchgaenge: t.verlauf.length, umkehr: t.umkehr.join(' '),
+      verlauf: t.verlauf.map(function (v) { return v[0] + ':' + v[1]; }).join(' ')
+    });
+    lauf.block += 1;
+    if (lauf.block < lauf.plan.bloecke.length) blockVorstellen(); else sitzungFertig();
+  }
+
+  async function sitzungFertig() {
+    wachHalten(false);
+    var p = lauf.plan;
+    var dauerS = Math.round((Date.now() - lauf.start) / 1000);
+    var zeilen = lauf.treppen.map(function (t) {
+      return [L.BEDINGUNG_NAME[t.bedingung] + (p.art === 'eingang1' ? ' (' + t.feinheit + ')' : ''),
+        L.prozent(t.schwelle) + ' %' + (t.grund === 'untergrenze' ? ' (Untergrenze)' : '')];
+    });
+    if (p.probe) {
+      textAnsicht('Probelauf beendet', zeilen, zeigeStart, ['Nichts wurde gespeichert.']);
+      return;
+    }
+    var erg = { datum: heute(), schwellen: {}, untergrenze: lauf.untergrenze };
+    lauf.treppen.forEach(function (t) {
+      if (p.art === 'eingang1') erg.schwellen[t.feinheit] = t.schwelle; else erg.schwellen[t.bedingung] = t.schwelle;
+    });
+    var r = L.sitzungAbschliessen(daten.zustand, p, erg);
+    var sitzung = {
+      nr: p.nr, datum: erg.datum, art: p.art, trainingNr: p.trainingNr, feinheit: p.feinheit,
+      ausrichtung: p.ausrichtung, abstand: p.abstand, pauseMs: L.ms(p.pauseBilder), dauerMs: L.ms(p.dauerBilder),
+      bloecke: lauf.treppen, dauerS: dauerS, zeitfehler: lauf.zeitfehler,
+      kalibrierung: kal(), meldungen: r.meldungen, fernkorrektur: daten.zustand.fernkorrektur || 'unbekannt'
+    };
+    daten.zustand = r.zustand;
+    daten.sitzungen.push(sitzung);
+    var gespeichert = await speichernMitAnzeige(sitzung, null);
+    var zeitfehler = lauf.zeitfehler;
+    // Zuerst eine kurze Ansicht, die bei 28 Punkten Schrift ohne Schieben passt (gelesen wird ohne
+    // Lesebrille); Schwellen und die Erklärung, was sich beim nächsten Mal ändert, auf Wunsch.
+    function kurz() {
+      textAnsicht('Sitzung ' + p.nr + ' geschafft', [], null, [
+        (gespeichert === false ? 'Daten: ' + Speicher.status() + '.' : 'Gespeichert.') +
+          ' Bis morgen, mit einer Nacht Schlaf dazwischen und ohne andere Sehübung direkt danach.',
+        el('button', { class: 'gross haupt', type: 'button', text: 'Fertig', onclick: zeigeStart }),
+        el('button', { class: 'gross', type: 'button', text: 'Ergebnis und Erklärung', onclick: ausfuehrlich })
+      ]);
+    }
+    function ausfuehrlich() {
+      var zusatz = r.meldungen.slice();
+      zusatz.push('Dauer ' + Math.round(dauerS / 60) + ' Minuten' + (zeitfehler ? ', ' + zeitfehler +
+        ' Durchgänge wegen eines ausgelassenen Bildes wiederholt.' : '.'));
+      zusatz.push('Daten: ' + Speicher.status() + '.');
+      textAnsicht('Sitzung ' + p.nr + ': Ergebnis', zeilen, zeigeStart, zusatz, 'Fertig', kurz);
+    }
+    kurz();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Verlauf und Daten
+  // ---------------------------------------------------------------------------
+  function zeigeVerlauf() {
+    var c = el('div', { class: 'tabelle-rahmen' });
+    var tab = el('table', { class: 'verlauf' });
+    tab.appendChild(el('tr', null, ['Nr', 'Datum', 'Art', 'Feinheit', 'Ziel allein', 'mit Flankern', 'Maske', 'Flanker + Maske']
+      .map(function (h) { return el('th', { text: h }); })));
+    daten.sitzungen.slice().reverse().forEach(function (s) {
+      var w = {}; s.bloecke.forEach(function (b) { w[s.art === 'eingang1' ? 'f' + b.feinheit : b.bedingung] = L.prozent(b.schwelle) + ' %'; });
+      var art = { eingang1: 'Eingang 1', eingang2: 'Eingang 2', training: 'Training' }[s.art];
+      var zellen = s.art === 'eingang1'
+        ? [s.nr, datumText(s.datum), art, '2 · 4 · 6 · 8', w.f2, w.f4, w.f6, w.f8]
+        : [s.nr, datumText(s.datum), art, s.feinheit, w.ziel, w.flanker, w.maske, w.flanker_maske];
+      tab.appendChild(el('tr', null, zellen.map(function (x) { return el('td', { text: String(x === undefined ? '–' : x) }); })));
+    });
+    c.appendChild(tab);
+    var bt = el('div', { class: 'tabelle-rahmen' });
+    var t2 = el('table', { class: 'verlauf' });
+    t2.appendChild(el('tr', null, ['Nr', 'Datum', 'nach Training', 'Visus', 'logMAR'].map(function (h) { return el('th', { text: h }); })));
+    daten.buchstabentests.slice().reverse().forEach(function (b) {
+      t2.appendChild(el('tr', null, [b.nr, datumText(b.datum), b.nachTraining, zahl(b.visus, 2), zahl(b.logmar, 2)]
+        .map(function (x) { return el('td', { text: String(x) }); })));
+    });
+    bt.appendChild(t2);
+    textAnsicht('Verlauf', [], zeigeStart, [
+      el('h3', { text: 'Buchstabentest' }), daten.buchstabentests.length ? bt : el('p', { text: 'Noch kein Buchstabentest.' }),
+      el('h3', { text: 'Sitzungen (Schwellen im Kontrast, kleiner ist besser)' }),
+      daten.sitzungen.length ? c : el('p', { text: 'Noch keine Sitzung.' })
+    ]);
+  }
+
+  async function datenSichern() {
+    var text = JSON.stringify(daten, null, 1);
+    var dl = null;
+    try { dl = window.claude && window.claude.use ? await window.claude.use('downloads') : null; } catch (e) { dl = null; }
+    if (dl) {
+      try { await dl.save({ filename: 'sehtraining-' + heute() + '.json', data: text }); textAnsicht('Daten gesichert', [], zeigeStart); return; }
+      catch (e) { if (e && e.code === 'declined') { zeigeStart(); return; } }
+    }
+    // Web-App: Teilen-Menü des iPhones, dort „In Dateien sichern“ (iCloud Drive oder auf dem iPhone).
+    var datei = teilbareDatei(text, 'sehtraining-' + heute() + '.json');
+    if (datei) {
+      try { await navigator.share({ files: [datei] }); textAnsicht('Daten gesichert', [], zeigeStart); return; }
+      catch (e) { if (e && e.name === 'AbortError') { zeigeStart(); return; } }
+    }
+    // Ohne Dateiablage: Text zum Kopieren zeigen.
+    var feld = el('textarea', { id: 'daten-text', class: 'daten-text', readonly: 'readonly' });
+    feld.value = text;
+    textAnsicht('Daten zum Kopieren', [], zeigeStart, ['Hier lässt sich keine Datei speichern. Markiere den Text und kopiere ihn.', feld]);
+  }
+
+  // Datei für das Teilen-Menü, wenn der Browser Dateien teilen kann (sonst null). Manche Browser
+  // teilen JSON nicht, aber Text; die Endung .json bleibt in beiden Fällen.
+  function teilbareDatei(text, name) {
+    if (!navigator.share || !navigator.canShare || typeof File !== 'function') return null;
+    var arten = ['application/json', 'text/plain'];
+    for (var i = 0; i < arten.length; i++) {
+      try { var f = new File([text], name, { type: arten[i] }); if (navigator.canShare({ files: [f] })) return f; } catch (e) { /* nächste Art */ }
+    }
+    return null;
+  }
+
+  function fernkorrekturWaehlen() {
+    var z = daten.zustand, wahl = el('div', { class: 'wahl' });
+    [['ohne', 'Ohne Brille'], ['fern', 'Mit dem Fernteil der Brille']].forEach(function (o) {
+      wahl.appendChild(el('button', { type: 'button', class: 'gross' + (z.fernkorrektur === o[0] ? ' gewaehlt' : ''), text: o[1],
+        onclick: async function () { z.fernkorrektur = o[0]; await speichernMitAnzeige(); zeigeStart(); } }));
+    });
+    textAnsicht('Brille beim Training', [], zeigeStart, [
+      'Lesebrille nie. Ob mit dem Fernteil der Gleitsichtbrille oder ganz ohne Brille, klären wir mit deinen Brillenwerten. ' +
+      'Wichtig ist, dass es immer gleich bleibt; die Wahl wird bei jeder Sitzung mitgespeichert.', wahl]);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Start
+  // ---------------------------------------------------------------------------
+  // Ansichten, die der Speicher für eigene Seiten benutzen darf (Einrichtung der Sicherung in der Web-App).
+  var ui = { textAnsicht: textAnsicht, el: el, liste: liste };
+
+  async function start() {
+    $('knopf-sitzung').addEventListener('click', function () { sitzungBeginnen(false); });
+    $('knopf-probe').addEventListener('click', function () { sitzungBeginnen(true); });
+    $('knopf-einrichtung').addEventListener('click', einrichtung);
+    $('knopf-test').addEventListener('click', function () {
+      buchstabentest(async function (erg) { var t = await buchstabentestSpeichern(erg);
+        if (t) textAnsicht('Buchstabentest gespeichert', [['Visus', zahl(t.visus, 2)], ['logMAR', zahl(t.logmar, 2)]], zeigeStart);
+        else zeigeStart(); });
+    });
+    $('knopf-verlauf').addEventListener('click', zeigeVerlauf);
+    $('knopf-daten').addEventListener('click', datenSichern);
+    $('knopf-brille').addEventListener('click', fernkorrekturWaehlen);
+    $('schrift-kleiner').addEventListener('click', function () { schrift = schriftSetzen(schrift - 2, true); });
+    $('schrift-groesser').addEventListener('click', function () { schrift = schriftSetzen(schrift + 2, true); });
+    $('sitzung-los').addEventListener('click', function () { $('sitzung-meldung').hidden = true; lauf.pause = false; durchgang(); });
+    $('antwort-1').addEventListener('click', function () { antwort(0); });
+    $('antwort-2').addEventListener('click', function () { antwort(1); });
+    $('knopf-pause').addEventListener('click', function () {
+      // Pause wirkt nach dem laufenden Durchgang; weiter geht es über den Knopf in der Meldung.
+      lauf.pause = true;
+      $('sitzung-meldung').hidden = false;
+      $('sitzung-meldung-titel').textContent = 'Pause';
+      $('sitzung-meldung-text').textContent = 'Der Block geht weiter, wenn du bereit bist.';
+    });
+    $('knopf-abbrechen').addEventListener('click', function () { wachHalten(false); lauf = null; zeigeStart(); });
+    document.addEventListener('keydown', function (e) {
+      if (!lauf || $('ansicht-sitzung').hidden) return;
+      if (e.key === '1') antwort(0); if (e.key === '2') antwort(1);
+    });
+
+    // Speicher mit eigener Ansicht (Web-App): Knopf „Sicherung“ auf der Startseite. Danach werden
+    // die Daten neu geladen, weil sie sich dort ändern können (Fassung von GitHub übernommen).
+    if (Speicher.einstellungen) {
+      $('knopf-sicherung').hidden = false;
+      $('knopf-sicherung').addEventListener('click', async function () {
+        await Speicher.einstellungen(ui);
+        daten = await Speicher.laden();
+        if (!daten.zustand) daten.zustand = L.neuerZustand();
+        zeigeStart();
+      });
+    }
+    // Ändert sich der Stand der Sicherung im Hintergrund, steht das gleich auf der Startseite.
+    if (Speicher.beiStatus) Speicher.beiStatus(function () { if (daten) zeigeSpeicherStand(); });
+
+    $('stand-speicher').textContent = 'wird geladen …';
+    await Speicher.verbinden(ui);
+    daten = await Speicher.laden();
+    if (!daten.zustand) daten.zustand = L.neuerZustand();
+    zeigeStart();
+    Speicher.abgleich().then(function () { zeigeSpeicherStand(); });
+  }
+
+  // Für Tests im Browser: Zugriff auf den Zustand.
+  window.Sehtraining = { daten: function () { return daten; }, sitzungBeginnen: sitzungBeginnen, antwort: antwort,
+    lauf: function () { return lauf; } };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
+})();
+
+</script>
+
+</html>
