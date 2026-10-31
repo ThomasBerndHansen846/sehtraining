@@ -175,6 +175,7 @@ ol.schritte { margin: 0; padding-left: 1.4em; display: flex; flex-direction: col
       <dt id="stand-person-titel" hidden>Person</dt><dd id="stand-person" hidden>–</dd>
       <dt>Training</dt><dd id="stand-sitzungen">–</dd>
       <dt>Buchstabentest</dt><dd id="stand-visus">–</dd>
+      <dt id="stand-ferne-titel" hidden>Ferne</dt><dd id="stand-ferne" hidden>–</dd>
       <dt>Daten</dt><dd id="stand-speicher">–</dd>
     </dl>
     <div class="reihe">
@@ -223,7 +224,7 @@ ol.schritte { margin: 0; padding-left: 1.4em; display: flex; flex-direction: col
 <script>
 // Ziel der Sicherung und Fassung des Programms (vom Bauwerkzeug eingesetzt)
 window.SEHTRAINING_ZIEL = {"api": "https://api.github.com", "besitzer": "ThomasBerndHansen846", "repo": "sehtraining-daten", "zweig": "main"};
-window.SEHTRAINING_FASSUNG = "2026-10-31-8a7706";
+window.SEHTRAINING_FASSUNG = "2026-10-31-d51582";
 </script>
 <script>
 // ===== logik.js =====
@@ -850,11 +851,12 @@ window.SEHTRAINING_FASSUNG = "2026-10-31-8a7706";
  *
  * Vier Teile, jeder startet mit einer eigenen Funktion an window.Kalibrierung:
  *
- *   groesse(container, vorgabeMmProPunkt, fertig)
+ *   groesse(container, vorgabeMmProPunkt, fertig, texte)
  *       Erst eine Anleitung, dann wird eine Karte im Scheckkartenformat (Normgröße
  *       85,60 × 53,98 mm) auf den Bildschirm gelegt; der Nutzer stellt ein Rechteck auf
  *       die Länge der Karte ein. Ergebnis: Millimeter je CSS-Pixel (kurz „Punkt“), oder
- *       null bei „Überspringen“.
+ *       null bei „Überspringen“. texte (wahlweise, für den Fernsehtest am Rechner):
+ *       { titel, zweck, schritte: [drei Sätze], vorgabe } ersetzt die Texte der Anleitung.
  *
  *   kennlinie(container, fertig)
  *       Findet den Grauwert, der halb so hell leuchtet wie Weiß. Links ein Feld aus
@@ -1160,8 +1162,9 @@ window.SEHTRAINING_FASSUNG = "2026-10-31-8a7706";
   // 1. Größenabgleich
   // ======================================================================
 
-  function groesse(container, vorgabeMmProPunkt, fertig) {
+  function groesse(container, vorgabeMmProPunkt, fertig, texte) {
     var wurzel = vorbereiten(container);
+    texte = texte || {};
 
     var vorgabe = (isFinite(vorgabeMmProPunkt) && vorgabeMmProPunkt > 0)
       ? vorgabeMmProPunkt : VORGABE_MM_PRO_PUNKT;
@@ -1183,20 +1186,22 @@ window.SEHTRAINING_FASSUNG = "2026-10-31-8a7706";
       leeren(wurzel);
       wurzel.classList.remove('kal-fest');
       var lesen = el('div', 'kal-lesen');
-      lesen.appendChild(el('h2', 'kal-titel', 'Schritt 2 von 4: Gr\u00f6\u00dfe'));
-      lesen.appendChild(el('p', 'kal-text',
+      lesen.appendChild(el('h2', 'kal-titel', texte.titel || 'Schritt 2 von 4: Gr\u00f6\u00dfe'));
+      lesen.appendChild(el('p', 'kal-text', texte.zweck ||
         'Die Seite muss wissen, wie gro\u00df ein Millimeter auf deinem Bildschirm ist. Nur dann haben ' +
         'die Streifen im Training und die Buchstaben im Test die richtige Gr\u00f6\u00dfe.'));
       lesen.appendChild(el('p', 'kal-text',
         'Du brauchst eine Karte im Scheckkartenformat, zum Beispiel Bankkarte, Personalausweis, ' +
         'F\u00fchrerschein oder Krankenkassenkarte.'));
       var ol = el('ol', 'kal-schritte');
-      ol.appendChild(el('li', null, 'Leg die Karte hochkant auf das Rechteck, das gleich erscheint.'));
-      ol.appendChild(el('li', null, 'Mach das Rechteck mit \u201e\u2212\u201c und \u201e+\u201c genau so lang wie die Karte. ' +
-        '\u201e\u2212\u2212\u201c und \u201e++\u201c \u00e4ndern in gr\u00f6\u00dferen Stufen.'));
-      ol.appendChild(el('li', null, 'Tippe auf \u201ePasst\u201c.'));
+      var schritte = (texte.schritte && texte.schritte.length) ? texte.schritte : [
+        'Leg die Karte hochkant auf das Rechteck, das gleich erscheint.',
+        'Mach das Rechteck mit \u201e\u2212\u201c und \u201e+\u201c genau so lang wie die Karte. ' +
+          '\u201e\u2212\u2212\u201c und \u201e++\u201c \u00e4ndern in gr\u00f6\u00dferen Stufen.',
+        'Tippe auf \u201ePasst\u201c.'];
+      schritte.forEach(function (t) { ol.appendChild(el('li', null, t)); });
       lesen.appendChild(ol);
-      lesen.appendChild(el('p', 'kal-text kal-leise',
+      lesen.appendChild(el('p', 'kal-text kal-leise', texte.vorgabe ||
         'F\u00fcr das iPhone 12 Pro ist die Gr\u00f6\u00dfe schon voreingestellt. Dann pr\u00fcfst du nur, ob es passt.'));
       wurzel.appendChild(lesen);
       var leiste = el('div', 'kal-leiste');
@@ -1653,6 +1658,9 @@ window.SEHTRAINING_FASSUNG = "2026-10-31-8a7706";
  *
  * Schnittstelle (hängt sich als window.Buchstabentest an):
  *   starten(container, opts, fertig)   opts = { mmProPunkt, abstandMm = 400, startLogmar = 0.8 }
+ *                                      Fernsehtest: zusätzlich ferne: true (Eingabe über die Tastatur
+ *                                      durch eine zweite Person, Zeilen bis -0,3, grobe Zeilen mit
+ *                                      weniger Buchstaben), titel und hinweis (Text vor dem Test).
  *   abbrechen()                        beendet ohne Ergebnis, ruft fertig(null)
  *   hoeheMm(logmar, abstandMm)         Buchstabenhöhe in mm
  *   wertung(zeilen)                    Buchstabe-für-Buchstabe-Wertung -> { logmar, richtig, gezeigt }
@@ -1684,6 +1692,13 @@ window.SEHTRAINING_FASSUNG = "2026-10-31-8a7706";
   // Rundungsfehler von 0,1er-Schritten aufsummieren. -1 = -0,1 logMAR, 10 = 1,0 logMAR.
   var ZEHNTEL_MIN = -1;
   var ZEHNTEL_MAX = 10;
+
+  // Fernsehtest: In der Ferne sehen gesunde Augen oft besser als Visus 1,0, deshalb Zeilen bis
+  // -0,3 (Visus 2,0). Die gröbste Zeile richtet sich nach der Höhe des Bildschirms (höchstens 1,0).
+  // Passen keine drei Buchstaben in die Breite, zeigt die Zeile weniger, mindestens einen.
+  var FERNE_ZEHNTEL_MIN = -3;
+  var FERNE_START = 0.5;
+  var FERNE_MINDESTENS = 1;
 
   // Eine Zeile gilt als „gelesen“, wenn mindestens dieser Anteil richtig ist
   // (4 von 5 = 0,8). Bei kürzeren Zeilen wird der Anteil entsprechend angewendet.
@@ -1787,11 +1802,22 @@ window.SEHTRAINING_FASSUNG = "2026-10-31-8a7706";
 
   // Wie viele Buchstaben einer Zeile in die Breite passen. Eine Zeile aus n Buchstaben ist
   // (2n - 1) Buchstabenbreiten breit (Zwischenraum = eine Buchstabenbreite). Wir verkleinern
-  // nie, sondern zeigen weniger Buchstaben, aber mindestens 3 und höchstens 5.
-  function passendeAnzahl(hoeheCss, breiteCss) {
+  // nie, sondern zeigen weniger Buchstaben, aber mindestens 3 (Fernsehtest: mindestens 1,
+  // Angabe „mindestens“) und höchstens 5.
+  function passendeAnzahl(hoeheCss, breiteCss, mindestens) {
+    var minimum = (mindestens >= 1) ? Math.floor(mindestens) : 3;
     if (!(hoeheCss > 0) || !(breiteCss > 0)) return ZEILENLAENGE;
     var n = Math.floor((breiteCss / hoeheCss + 1) / 2 + 1e-9);
-    return Math.max(3, Math.min(ZEILENLAENGE, n));
+    return Math.max(minimum, Math.min(ZEILENLAENGE, n));
+  }
+
+  // Gröbste Zeile (in Zehnteln logMAR), deren Buchstaben noch ganz in die gegebene Höhe passen,
+  // höchstens 1,0. Passt nicht einmal die Startzeile hinein, gilt die Startzeile (Notfall).
+  function groessteZeile(hoeheVerfuegbarCss, abstandMm, mmProPunkt, untergrenze) {
+    for (var z = ZEHNTEL_MAX; z > untergrenze; z--) {
+      if (Math.ceil(hoeheMm(z / 10, abstandMm) / mmProPunkt) <= hoeheVerfuegbarCss) return z;
+    }
+    return untergrenze;
   }
 
   // ----------------------------------------------------------------------
@@ -1803,38 +1829,46 @@ window.SEHTRAINING_FASSUNG = "2026-10-31-8a7706";
   //   aktuell   die Stufe der Zeile, die jetzt gezeigt wird
   //   kleinste, groesste   kleinste und größte bisher gezeigte Stufe
   //   fertig    true, sobald der Test zu Ende ist
-  function neuerVerlauf(startLogmar) {
+  //   min, max  feinste und gröbste erlaubte Stufe (Vorgabe -1 und 10; Fernsehtest -3 und je nach
+  //             Bildschirm)
+  function neuerVerlauf(startLogmar, minZehntel, maxZehntel) {
+    var min = isFinite(minZehntel) ? Math.round(minZehntel) : ZEHNTEL_MIN;
+    var max = isFinite(maxZehntel) ? Math.round(maxZehntel) : ZEHNTEL_MAX;
+    if (max < min) max = min;
     var s = Math.round((isFinite(startLogmar) ? startLogmar : 0.8) * 10);
-    s = Math.max(ZEHNTEL_MIN, Math.min(ZEHNTEL_MAX, s));
-    return { modus: 'start', aktuell: s, kleinste: s, groesste: s, fertig: false };
+    s = Math.max(min, Math.min(max, s));
+    return { modus: 'start', aktuell: s, kleinste: s, groesste: s, fertig: false, min: min, max: max };
   }
 
   // Meldet das Ergebnis der gerade gezeigten Zeile (richtig von anzahl) und
   // bestimmt die nächste Stufe oder das Ende.
   //   - Phase 'start'/'auf': Hat die Zeile genug richtige (4 von 5), ist sie die Ausgangszeile,
   //     und es geht unterhalb der kleinsten bisher gezeigten Zeile abwärts weiter. Sonst
-  //     eine Stufe größer, höchstens bis 1,0; wird dort nicht gelesen, ist der Test zu Ende.
+  //     eine Stufe größer, höchstens bis zur gröbsten Zeile (Vorgabe 1,0); wird dort nicht
+  //     gelesen, ist der Test zu Ende.
   //   - Phase 'ab': Ende bei mehr als der Hälfte falsch (bei 5 Buchstaben: 3 oder mehr Fehler)
-  //     oder nach der Zeile -0,1.
+  //     oder nach der feinsten Zeile (Vorgabe -0,1).
   function verlaufWeiter(v, richtig, anzahl) {
+    var min = isFinite(v.min) ? v.min : ZEHNTEL_MIN;
+    var max = isFinite(v.max) ? v.max : ZEHNTEL_MAX;
     var bestanden = richtig >= Math.ceil(BESTEHEN_ANTEIL * anzahl - 1e-9);
     var zuVieleFalsch = (anzahl - richtig) * 2 > anzahl;
     v.kleinste = Math.min(v.kleinste, v.aktuell);
     v.groesste = Math.max(v.groesste, v.aktuell);
 
     if (v.modus === 'ab') {
-      if (zuVieleFalsch || v.aktuell <= ZEHNTEL_MIN) { v.fertig = true; return v; }
+      if (zuVieleFalsch || v.aktuell <= min) { v.fertig = true; return v; }
       v.aktuell = v.kleinste - 1;
       return v;
     }
 
     if (bestanden) {                                   // Ausgangszeile gefunden
       v.modus = 'ab';
-      if (v.kleinste <= ZEHNTEL_MIN) { v.fertig = true; return v; }
+      if (v.kleinste <= min) { v.fertig = true; return v; }
       v.aktuell = v.kleinste - 1;                      // keine Zeile doppelt zeigen
     } else {
       v.modus = 'auf';
-      if (v.groesste >= ZEHNTEL_MAX) { v.fertig = true; return v; }
+      if (v.groesste >= max) { v.fertig = true; return v; }
       v.aktuell = v.groesste + 1;
     }
     return v;
@@ -2057,6 +2091,7 @@ window.SEHTRAINING_FASSUNG = "2026-10-31-8a7706";
     '.bt-platz{width:46px;height:52px;border:2px solid rgba(128,128,128,.55);border-radius:10px;',
     'display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:600}',
     '.bt-platz-dran{border-color:var(--akzent,#e07b00)}',
+    '.bt-tastenhinweis{flex:none;text-align:center;font-size:.8rem;opacity:.8;padding:4px 12px 12px}',
     '.bt-tasten{margin-top:auto;align-self:center;width:100%;max-width:520px;display:grid;grid-template-columns:repeat(3,1fr);',
     'grid-auto-rows:minmax(52px,64px);gap:8px;padding:8px 12px 12px}',
     '@media (orientation:landscape){.bt-tasten{grid-template-columns:repeat(6,1fr);grid-auto-rows:minmax(48px,60px)}}',
@@ -2097,6 +2132,7 @@ window.SEHTRAINING_FASSUNG = "2026-10-31-8a7706";
   // ---------------------------------------------------------------------
   function zeigeHinweis(a) {
     leeren(a.buehne);
+    if (a.ferne) { zeigeHinweisFerne(a); return; }
     var abstandCm = a.abstandMm / 10;
     var cmText = (abstandCm === Math.round(abstandCm)) ? String(abstandCm)
       : String(Math.round(abstandCm * 10) / 10).replace('.', ',');
@@ -2115,11 +2151,56 @@ window.SEHTRAINING_FASSUNG = "2026-10-31-8a7706";
     a.buehne.appendChild(mitte);
   }
 
+  // Fernsehtest: Den Text liest die zweite Person am Bildschirm, nicht die getestete Person.
+  // Die Eingabetaste startet, damit niemand zum Knopf greifen muss.
+  function zeigeHinweisFerne(a) {
+    var mitte = el('div', 'bt-mitte');
+    mitte.appendChild(el('h1', 'bt-h1', a.titel || 'Fernsehtest'));
+    (a.hinweis || []).forEach(function (t) { mitte.appendChild(el('p', 'bt-text', t)); });
+    mitte.appendChild(el('p', 'bt-klein',
+      'Die Person nennt die Buchstaben von links nach rechts, du tippst sie auf der Tastatur. ' +
+      'Leertaste: weiß nicht. Rücktaste: letzte Eingabe zurück. Ohne Rückmeldung, ob es richtig war.'));
+    mitte.appendChild(knopf('Los (Eingabetaste)', 'bt-knopf bt-gross', function () { los(); }));
+    a.buehne.appendChild(mitte);
+    function los() {
+      a.startZeit = Date.now();
+      zeigeTest(a);
+    }
+    a.taste = function (ev) { if (ev.key === 'Enter') { ev.preventDefault(); los(); } };
+  }
+
+  // Fernsehtest: Die gröbste Zeile muss ganz in die Höhe des Fensters passen; abgezogen werden
+  // Kopfzeile, Antwortfelder, Tastenhinweis und die Ränder des weißen Feldes. Gerechnet wird beim
+  // Öffnen und noch einmal beim Start der ersten Zeile, weil das Fenster inzwischen ins Vollbild
+  // gewechselt sein kann (dann passen gröbere Zeilen).
+  function ferneBemessen(a) {
+    var hoehe = a.container.clientHeight || global.innerHeight || 0;
+    var frei = hoehe - 60 - 76 - 40 - (FELD_OBEN + MARKE_ABSTAND + MARKE_HOEHE + FELD_UNTEN);
+    var max = groessteZeile(frei, a.abstandMm, a.mm, Math.round(a.start * 10));
+    a.verlauf = neuerVerlauf(a.start, FERNE_ZEHNTEL_MIN, max);
+    a.hMaxCss = Math.ceil(hoeheMm(max / 10, a.abstandMm) / a.mm);
+    a.feldHoehe = FELD_OBEN + a.hMaxCss + MARKE_ABSTAND + MARKE_HOEHE + FELD_UNTEN;
+  }
+
+  // Tastatur im Fernsehtest: Buchstaben (groß oder klein), Leertaste oder „?“ für „weiß nicht“,
+  // Rücktaste. Andere Tasten bleiben wirkungslos (auch Escape, das Safari für das Vollbild braucht).
+  function tasteImTest(a, ev) {
+    if (ev.metaKey || ev.ctrlKey || ev.altKey) return;   // Tastenkürzel von Safari nicht stören
+    var k = ev.key;
+    if (k === 'Backspace' || k === 'Delete') { ev.preventDefault(); zurueck(a); return; }
+    if (k === ' ' || k === '?' || k === '-') { ev.preventDefault(); antwort(a, '?'); return; }
+    if (typeof k === 'string' && k.length === 1) {
+      var g = k.toUpperCase();
+      if (BUCHSTABEN.indexOf(g) >= 0) { ev.preventDefault(); antwort(a, g); }
+    }
+  }
+
   // ---------------------------------------------------------------------
   // Testbild: weißes Feld mit der Zeile, Antwortfelder, Tastatur
   // ---------------------------------------------------------------------
   function zeigeTest(a) {
     leeren(a.buehne);
+    if (a.ferne && !a.zeilen.length) ferneBemessen(a);
     var test = el('div', 'bt-test');
 
     a.feld = el('div', 'bt-feld');
@@ -2132,14 +2213,21 @@ window.SEHTRAINING_FASSUNG = "2026-10-31-8a7706";
     a.plaetze = el('div', 'bt-antworten');
     test.appendChild(a.plaetze);
 
-    // Tastatur: die 10 Buchstaben, dann „?“ (weiß ich nicht) und die Rücktaste.
-    var tasten = el('div', 'bt-tasten');
-    BUCHSTABEN.split('').forEach(function (c) {
-      tasten.appendChild(knopf(c, 'bt-taste', function () { antwort(a, c); }));
-    });
-    tasten.appendChild(knopf('?', 'bt-taste', function () { antwort(a, '?'); }, 'weiß ich nicht'));
-    tasten.appendChild(knopf('⌫', 'bt-taste', function () { zurueck(a); }, 'letzte Eingabe zurücknehmen'));
-    test.appendChild(tasten);
+    if (a.ferne) {
+      // Fernsehtest: Eingabe über die Tastatur des Rechners, keine Tasten auf dem Bildschirm.
+      test.appendChild(el('div', 'bt-tastenhinweis',
+        'Buchstaben tippen · Leertaste: weiß nicht · Rücktaste: zurück'));
+      a.taste = function (ev) { tasteImTest(a, ev); };
+    } else {
+      // Tastatur: die 10 Buchstaben, dann „?“ (weiß ich nicht) und die Rücktaste.
+      var tasten = el('div', 'bt-tasten');
+      BUCHSTABEN.split('').forEach(function (c) {
+        tasten.appendChild(knopf(c, 'bt-taste', function () { antwort(a, c); }));
+      });
+      tasten.appendChild(knopf('?', 'bt-taste', function () { antwort(a, '?'); }, 'weiß ich nicht'));
+      tasten.appendChild(knopf('⌫', 'bt-taste', function () { zurueck(a); }, 'letzte Eingabe zurücknehmen'));
+      test.appendChild(tasten);
+    }
 
     a.buehne.appendChild(test);
     var akzent = '';
@@ -2153,7 +2241,7 @@ window.SEHTRAINING_FASSUNG = "2026-10-31-8a7706";
     var logmar = a.verlauf.aktuell / 10;                 // ganze Zehntel / 10 ergibt genau 0,1er-Werte
     var hCss = hoeheMm(logmar, a.abstandMm) / a.mm;      // Buchstabenhöhe in CSS-Pixeln
     var breite = Math.floor(a.feld.clientWidth) - 2 * SEITENRAND;
-    var n = passendeAnzahl(hCss, breite);
+    var n = passendeAnzahl(hCss, breite, a.mindestens);
     a.zeile = { logmar: logmar, buchstaben: zufallszeile(a.zufall, n), antworten: '' };
 
     leeren(a.plaetze);
@@ -2256,8 +2344,12 @@ window.SEHTRAINING_FASSUNG = "2026-10-31-8a7706";
       'Ergebnis: Visus ' + formatZahl(a.ergebnis.visus) + ' (logMAR ' + formatZahl(a.ergebnis.logmar) + ')'));
     mitte.appendChild(el('p', 'bt-klein',
       a.ergebnis.richtig + ' von ' + a.ergebnis.gezeigt + ' Buchstaben richtig gelesen.'));
-    mitte.appendChild(knopf('Weiter', 'bt-knopf bt-gross', function () { beenden(a, a.ergebnis); }));
+    mitte.appendChild(knopf(a.ferne ? 'Weiter (Eingabetaste)' : 'Weiter', 'bt-knopf bt-gross',
+      function () { beenden(a, a.ergebnis); }));
     a.buehne.appendChild(mitte);
+    a.taste = a.ferne ? function (ev) {
+      if (ev.key === 'Enter') { ev.preventDefault(); beenden(a, a.ergebnis); }
+    } : null;
   }
 
   // ---------------------------------------------------------------------
@@ -2268,6 +2360,7 @@ window.SEHTRAINING_FASSUNG = "2026-10-31-8a7706";
     a.beendet = true;
     global.removeEventListener('resize', a.beiGroessenaenderung);
     global.removeEventListener('orientationchange', a.beiGroessenaenderung);
+    if (a.beiTaste) global.document.removeEventListener('keydown', a.beiTaste);
     if (a.wurzel.parentNode) a.wurzel.parentNode.removeChild(a.wurzel);
     if (aktiv === a) aktiv = null;
     if (typeof a.fertig === 'function') a.fertig(ergebnis);
@@ -2290,27 +2383,39 @@ window.SEHTRAINING_FASSUNG = "2026-10-31-8a7706";
 
     stilEinfuegen();
 
+    var ferne = opts.ferne === true;
+    var start = opts.startLogmar == null ? (ferne ? FERNE_START : 0.8) : Number(opts.startLogmar);
     var a = {
       container: container,
       fertig: fertig,
       mm: mm,
       abstandMm: abstand,
-      verlauf: neuerVerlauf(opts.startLogmar == null ? 0.8 : Number(opts.startLogmar)),
+      ferne: ferne,
+      titel: opts.titel ? String(opts.titel) : '',
+      hinweis: Array.isArray(opts.hinweis) ? opts.hinweis.map(String) : [],
+      mindestens: ferne ? FERNE_MINDESTENS : 3,
       zeilen: [],
       zufall: (typeof opts.zufall === 'function') ? opts.zufall : Math.random,
       beendet: false,
-      startZeit: Date.now()
+      startZeit: Date.now(),
+      taste: null
     };
 
-    // Das weiße Feld ist für die größte mögliche Zeile (1,0 logMAR) bemessen und bleibt für
-    // alle Zeilen gleich hoch; die Grundlinie der Buchstaben liegt immer an derselben Stelle.
-    a.hMaxCss = Math.min(400, Math.ceil(hoeheMm(ZEHNTEL_MAX / 10, abstand) / mm));
-    a.feldHoehe = FELD_OBEN + a.hMaxCss + MARKE_ABSTAND + MARKE_HOEHE + FELD_UNTEN;
+    a.start = start;
+    if (ferne) {
+      ferneBemessen(a);
+    } else {
+      a.verlauf = neuerVerlauf(start);
+      // Das weiße Feld ist für die größte mögliche Zeile (1,0 logMAR) bemessen und bleibt für
+      // alle Zeilen gleich hoch; die Grundlinie der Buchstaben liegt immer an derselben Stelle.
+      a.hMaxCss = Math.min(400, Math.ceil(hoeheMm(ZEHNTEL_MAX / 10, abstand) / mm));
+      a.feldHoehe = FELD_OBEN + a.hMaxCss + MARKE_ABSTAND + MARKE_HOEHE + FELD_UNTEN;
+    }
 
     // Grundgerüst: Kopfzeile mit dem Abbrechen-Knopf und eine Bühne für die wechselnden Bilder.
     a.wurzel = el('div', 'bt-wurzel');
     var kopf = el('div', 'bt-kopf');
-    kopf.appendChild(el('div', 'bt-titel', 'Buchstabentest'));
+    kopf.appendChild(el('div', 'bt-titel', ferne ? (a.titel || 'Fernsehtest') : 'Buchstabentest'));
     kopf.appendChild(knopf('Abbrechen', 'bt-knopf bt-abbrechen', function () { abbrechen(); }));
     a.wurzel.appendChild(kopf);
     a.buehne = el('div', 'bt-buehne');
@@ -2328,6 +2433,12 @@ window.SEHTRAINING_FASSUNG = "2026-10-31-8a7706";
     };
     global.addEventListener('resize', a.beiGroessenaenderung);
     global.addEventListener('orientationchange', a.beiGroessenaenderung);
+
+    // Tastatur (nur Fernsehtest): Jede Ansicht setzt a.taste auf ihre eigene Behandlung.
+    if (ferne) {
+      a.beiTaste = function (ev) { if (!a.beendet && typeof a.taste === 'function') a.taste(ev); };
+      global.document.addEventListener('keydown', a.beiTaste);
+    }
 
     container.appendChild(a.wurzel);
     aktiv = a;
@@ -2352,6 +2463,8 @@ window.SEHTRAINING_FASSUNG = "2026-10-31-8a7706";
       neuerVerlauf: neuerVerlauf,
       verlaufWeiter: verlaufWeiter,
       passendeAnzahl: passendeAnzahl,
+      groessteZeile: groessteZeile,
+      tasteImTest: tasteImTest,
       formatZahl: formatZahl,
       baueErgebnis: baueErgebnis,
       breiten: { N: W_N, K: W_K, V: W_V, Z: W_Z, R: W_R }
@@ -2363,7 +2476,8 @@ window.SEHTRAINING_FASSUNG = "2026-10-31-8a7706";
 <script>
 // ===== speicher_gemeinsam.js =====
 // Gemeinsame Regeln der beiden Speicher (claude.ai-Seite: speicher_claude.js, Web-App:
-// speicher_github.js): wie leere Daten aussehen und welche von zwei Fassungen neuer ist.
+// speicher_github.js): wie leere Daten aussehen, welche von zwei Fassungen neuer ist und wie der
+// Dateiname einer Person bei GitHub lautet.
 // Daten: { zustand, sitzungen: [...], buchstabentests: [...], stand }
 // "stand" zählt die Speichervorgänge; beim Vergleich gilt die Fassung mit dem höheren Stand.
 (function (global) {
@@ -2384,7 +2498,16 @@ window.SEHTRAINING_FASSUNG = "2026-10-31-8a7706";
     return false;
   }
 
-  global.SpeicherRegeln = { leer: leer, rang: rang, neuer: neuer };
+  // Dateiname aus dem Namen der Person: klein, Umlaute ausgeschrieben, nur a–z, 0–9 und „-“.
+  // Aus „Wiebke“ wird „wiebke“, aus „Jürgen Groß“ „juergen-gross“. Leerer Name: null.
+  function kennungAus(name) {
+    var k = String(name || '').toLowerCase().replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss');
+    if (k.normalize) k = k.normalize('NFD').replace(/[̀-ͯ]/g, '');
+    k = k.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
+    return k || null;
+  }
+
+  global.SpeicherRegeln = { leer: leer, rang: rang, neuer: neuer, kennungAus: kennungAus };
 })(typeof window !== 'undefined' ? window : this);
 
 </script>
@@ -2439,6 +2562,95 @@ window.SEHTRAINING_FASSUNG = "2026-10-31-8a7706";
 
 </script>
 <script>
+// ===== github_zugriff.js =====
+// Zugriff auf Dateien im privaten Repository bei GitHub (Contents-Schnittstelle), mit Frist.
+// Gemeinsam für die Sicherung der Web-App (speicher_github.js) und den Fernsehtest am MacBook
+// (ferne.js). Alle Dateien liegen im Ordner daten/ des Repositorys.
+//
+// Ziel (Besitzer und Name des privaten Repositorys) setzt das Bauwerkzeug als
+// window.SEHTRAINING_ZIEL = { api, besitzer, repo, zweig }. Der Zugangsschlüssel kommt bei jeder
+// Anfrage vom Aufrufer; dieser Teil speichert nichts.
+(function (global) {
+  'use strict';
+  var ZIEL = global.SEHTRAINING_ZIEL || { api: 'https://api.github.com', besitzer: '', repo: '', zweig: 'main' };
+  var fristMs = 20000;        // so lange wird höchstens auf eine Antwort von GitHub gewartet
+
+  function zweig() { return ZIEL.zweig || 'main'; }
+  function repoName() { return ZIEL.besitzer + '/' + ZIEL.repo; }
+  function repoWeg() { return '/repos/' + encodeURIComponent(ZIEL.besitzer) + '/' + encodeURIComponent(ZIEL.repo); }
+  function dateiWeg(datei) { return repoWeg() + '/contents/daten/' + datei; }
+
+  // GitHub erwartet den Inhalt einer Datei in Base64; der Text ist UTF-8 (Umlaute).
+  function zuBase64(text) { return global.btoa(unescape(encodeURIComponent(text))); }
+  function ausBase64(b64) { return decodeURIComponent(escape(global.atob(String(b64).replace(/\s/g, '')))); }
+
+  // Ergebnis: { status, json, text }. Ohne Antwort innerhalb der Frist: Fehler { art: 'frist' },
+  // ohne Verbindung: Fehler { art: 'netz' }. roh = Datei als Text statt als JSON-Beschreibung.
+  function anfrage(methode, weg, koerper, schl, roh) {
+    var opts = { method: methode, cache: 'no-store', headers: {
+      'Accept': roh ? 'application/vnd.github.raw+json' : 'application/vnd.github+json',
+      'Authorization': 'Bearer ' + schl } };
+    if (koerper) { opts.headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(koerper); }
+    var abbruch = typeof AbortController === 'function' ? new AbortController() : null;
+    if (abbruch) opts.signal = abbruch.signal;
+    return new Promise(function (ok, fehler) {
+      var uhr = setTimeout(function () { if (abbruch) abbruch.abort(); fehler({ art: 'frist' }); }, fristMs);
+      global.fetch(ZIEL.api + weg, opts).then(function (antwort) {
+        return antwort.text().then(function (text) {
+          clearTimeout(uhr);
+          var json = null;
+          if (!roh) { try { json = text ? JSON.parse(text) : null; } catch (e) { json = null; } }
+          ok({ status: antwort.status, json: json, text: text });
+        });
+      }).catch(function () { clearTimeout(uhr); fehler({ art: 'netz' }); });
+    });
+  }
+
+  // Holt eine Datei aus daten/ (z. B. „thomas.json“): { fehlt: true } oder { inhalt, sha }.
+  // Fehler: { art: 'status', status }, { art: 'kaputt' } (kein gültiges JSON), frist, netz.
+  async function holen(schl, datei) {
+    var weg = dateiWeg(datei) + '?ref=' + encodeURIComponent(zweig());
+    var a = await anfrage('GET', weg, null, schl);
+    if (a.status === 404) return { fehlt: true };
+    if (a.status !== 200 || !a.json) throw { art: 'status', status: a.status };
+    var text;
+    if (a.json.encoding === 'base64' && a.json.content) text = ausBase64(a.json.content);
+    else {
+      // Dateien über 1 MB liefert GitHub in dieser Form ohne Inhalt; dann als Text nachladen.
+      var r = await anfrage('GET', weg, null, schl, true);
+      if (r.status !== 200) throw { art: 'status', status: r.status };
+      text = r.text;
+    }
+    var inhalt;
+    try { inhalt = JSON.parse(text); } catch (e) { throw { art: 'kaputt' }; }
+    return { inhalt: inhalt, sha: a.json.sha };
+  }
+
+  // Legt Text als Datei in daten/ ab. Mit sha: ersetzt genau diese Fassung (sonst lehnt GitHub
+  // mit 409 oder 422 ab), ohne sha: legt die Datei neu an. Ergebnis: { status, sha }.
+  async function ablegen(schl, datei, text, sha, nachricht) {
+    var koerper = { message: nachricht, content: zuBase64(text), branch: zweig() };
+    if (sha) koerper.sha = sha;
+    var a = await anfrage('PUT', dateiWeg(datei), koerper, schl);
+    return { status: a.status, sha: a.json && a.json.content ? a.json.content.sha : null };
+  }
+
+  // Prüft Schlüssel und Repository: löst auf, wenn GitHub das Repository mit diesem Schlüssel
+  // zeigt; sonst Fehler { art: 'status', status, beim: 'repo' } bzw. frist oder netz.
+  async function repoPruefen(schl) {
+    var a = await anfrage('GET', repoWeg(), null, schl);
+    if (a.status !== 200) throw { art: 'status', status: a.status, beim: 'repo' };
+  }
+
+  global.GitHubZugriff = {
+    anfrage: anfrage, holen: holen, ablegen: ablegen, repoPruefen: repoPruefen,
+    repoName: repoName, zuBase64: zuBase64, ausBase64: ausBase64,
+    fristSetzen: function (ms) { fristMs = ms; }   // nur für Tests
+  };
+})(typeof window !== 'undefined' ? window : this);
+
+</script>
+<script>
 // ===== speicher_github.js =====
 // Speicher der Web-App: Die Daten liegen auf dem iPhone im Browser-Speicher der Web-App.
 // Nach jedem Speichern lädt die Web-App sie im Hintergrund als Datei der Person in ein privates
@@ -2456,24 +2668,25 @@ window.SEHTRAINING_FASSUNG = "2026-10-31-8a7706";
 // Schlüssel bleibt nur in diesem Gerät (Browser-Speicher) und geht nur an GitHub.
 // Ziel der Sicherung (Besitzer und Name des privaten Repositorys) setzt das Bauwerkzeug als
 // window.SEHTRAINING_ZIEL = { api, besitzer, repo, zweig }, die Fassung des Programms als
-// window.SEHTRAINING_FASSUNG.
+// window.SEHTRAINING_FASSUNG. Die Anfragen an GitHub stellt github_zugriff.js (gemeinsam mit dem
+// Fernsehtest).
 // Schnittstelle wie speicher_claude.js, dazu person(), einstellungen(ui) und beiStatus(f).
 (function (global) {
   'use strict';
   var Regeln = global.SpeicherRegeln;
-  var ZIEL = global.SEHTRAINING_ZIEL || { api: 'https://api.github.com', besitzer: '', repo: '', zweig: 'main' };
+  var GH = global.GitHubZugriff;
   var LS_DATEN = 'sehtraining-webapp-daten';            // Trainingsdaten der Person
   var LS_META = 'sehtraining-webapp-sicherung';         // Person, Datei und Stand der Sicherung
   var LS_SCHLUESSEL = 'sehtraining-webapp-schluessel';  // Zugangsschlüssel (nur auf diesem Gerät)
-  var FRIST_MS = 20000;       // so lange wartet die Web-App höchstens auf eine Antwort von GitHub
   var NACHHOLEN_MS = 60000;   // ohne Internet: nächster Versuch nach einer Minute
 
-  // meta: { person, kennung, sha, gesichertStand, gesichertAm, fehler, konflikt, nachricht, ohneSicherung }
+  // meta: { person, kennung, sha, gesichertStand, gesichertAm, fehler, konflikt, nachricht, ohneSicherung, ferne }
   //   sha            Kennzeichen der Datei bei GitHub nach dem letzten Hochladen; GitHub nimmt
   //                  eine neue Fassung nur an, wenn es mitgeschickt wird und noch stimmt
   //   gesichertStand Stand der Daten, die zuletzt bei GitHub angekommen sind
   //   fehler         Art des letzten Fehlschlags (netz, frist, schluessel, zugriff, rechte, …)
   //   konflikt       { stand, am }: bei GitHub liegt eine neuere Fassung; die Person entscheidet
+  //   ferne          letzter Fernsehtest vom MacBook { datum, rechts, links, beide } (je { logmar, visus })
   var meta = lesen(LS_META) || {};
   var laeuft = null;          // Promise des laufenden Hochladens, sonst null
   var nachholen = null;       // Zeitgeber für den nächsten Versuch
@@ -2492,22 +2705,10 @@ window.SEHTRAINING_FASSUNG = "2026-10-31-8a7706";
   function eingerichtet() { return !!(meta.kennung && schluessel()); }
   function jetztIso() { return new Date().toISOString(); }
   function melden() { hoerer.forEach(function (f) { try { f(); } catch (e) { /* Anzeige ist Nebensache */ } }); }
-  function zweig() { return ZIEL.zweig || 'main'; }
-  function repoName() { return ZIEL.besitzer + '/' + ZIEL.repo; }
-  function repoWeg() { return '/repos/' + encodeURIComponent(ZIEL.besitzer) + '/' + encodeURIComponent(ZIEL.repo); }
-  function dateiWeg(kennung) { return repoWeg() + '/contents/daten/' + kennung + '.json'; }
+  function repoName() { return GH.repoName(); }
 
-  // Dateiname aus dem Namen der Person: klein, Umlaute ausgeschrieben, nur a–z, 0–9 und „-“.
-  function kennungAus(name) {
-    var k = String(name || '').toLowerCase().replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss');
-    if (k.normalize) k = k.normalize('NFD').replace(/[̀-ͯ]/g, '');
-    k = k.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
-    return k || null;
-  }
-
-  // GitHub erwartet den Inhalt einer Datei in Base64; der Text ist UTF-8 (Umlaute).
-  function zuBase64(text) { return global.btoa(unescape(encodeURIComponent(text))); }
-  function ausBase64(b64) { return decodeURIComponent(escape(global.atob(String(b64).replace(/\s/g, '')))); }
+  // Dateiname aus dem Namen der Person (Regel in speicher_gemeinsam.js, gilt auch für den Fernsehtest).
+  var kennungAus = Regeln.kennungAus;
 
   // „heute um 20:15“, „gestern um 8:05“, „am 29.10. um 20:15“ (Ortszeit des iPhones).
   function zeitText(iso) {
@@ -2526,31 +2727,6 @@ window.SEHTRAINING_FASSUNG = "2026-10-31-8a7706";
     return s + (s === 1 ? ' Sitzung, ' : ' Sitzungen, ') + b + (b === 1 ? ' Buchstabentest' : ' Buchstabentests');
   }
 
-  // ---------------------------------------------------------------------------
-  // Anfragen an GitHub (mit Frist)
-  // ---------------------------------------------------------------------------
-  // Ergebnis: { status, json, text }. Ohne Antwort innerhalb der Frist: Fehler { art: 'frist' },
-  // ohne Verbindung: Fehler { art: 'netz' }. roh = Datei als Text statt als JSON-Beschreibung.
-  function anfrage(methode, weg, koerper, schl, roh) {
-    var opts = { method: methode, cache: 'no-store', headers: {
-      'Accept': roh ? 'application/vnd.github.raw+json' : 'application/vnd.github+json',
-      'Authorization': 'Bearer ' + schl } };
-    if (koerper) { opts.headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(koerper); }
-    var abbruch = typeof AbortController === 'function' ? new AbortController() : null;
-    if (abbruch) opts.signal = abbruch.signal;
-    return new Promise(function (ok, fehler) {
-      var uhr = setTimeout(function () { if (abbruch) abbruch.abort(); fehler({ art: 'frist' }); }, FRIST_MS);
-      global.fetch(ZIEL.api + weg, opts).then(function (antwort) {
-        return antwort.text().then(function (text) {
-          clearTimeout(uhr);
-          var json = null;
-          if (!roh) { try { json = text ? JSON.parse(text) : null; } catch (e) { json = null; } }
-          ok({ status: antwort.status, json: json, text: text });
-        });
-      }).catch(function () { clearTimeout(uhr); fehler({ art: 'netz' }); });
-    });
-  }
-
   // Inhalt der Datei als Text: dieselben Daten wie im Browser-Speicher, dazu Person und Zeitpunkt.
   // Eine Angabe je Zeile, damit GitHub Änderungen von Fassung zu Fassung übersichtlich zeigt.
   function dateiText(d, person) {
@@ -2561,31 +2737,16 @@ window.SEHTRAINING_FASSUNG = "2026-10-31-8a7706";
     return { zustand: f.zustand || null, sitzungen: f.sitzungen || [], buchstabentests: f.buchstabentests || [], stand: f.stand || 0 };
   }
 
-  // Holt die Datei der Person: { fehlt: true } oder { daten, sha }.
+  // Holt die Datei der Person (daten/<kennung>.json): { fehlt: true } oder { daten, sha }.
   async function holen(schl, kennung) {
-    var a = await anfrage('GET', dateiWeg(kennung) + '?ref=' + encodeURIComponent(zweig()), null, schl);
-    if (a.status === 404) return { fehlt: true };
-    if (a.status !== 200 || !a.json) throw { art: 'status', status: a.status };
-    var text;
-    if (a.json.encoding === 'base64' && a.json.content) text = ausBase64(a.json.content);
-    else {
-      // Dateien über 1 MB liefert GitHub in dieser Form ohne Inhalt; dann als Text nachladen.
-      var r = await anfrage('GET', dateiWeg(kennung) + '?ref=' + encodeURIComponent(zweig()), null, schl, true);
-      if (r.status !== 200) throw { art: 'status', status: r.status };
-      text = r.text;
-    }
-    var f;
-    try { f = JSON.parse(text); } catch (e) { throw { art: 'kaputt' }; }
-    return { daten: ausDatei(f), sha: a.json.sha };
+    var f = await GH.holen(schl, kennung + '.json');
+    return f.fehlt ? f : { daten: ausDatei(f.inhalt), sha: f.sha };
   }
 
   // Legt die Daten als Datei der Person ab. Mit sha: ersetzt genau diese Fassung (sonst lehnt
   // GitHub mit 409 oder 422 ab), ohne sha: legt die Datei neu an. Ergebnis: { status, sha }.
-  async function ablegen(d, sha, schl, person, kennung, nachricht) {
-    var koerper = { message: nachricht, content: zuBase64(dateiText(d, person)), branch: zweig() };
-    if (sha) koerper.sha = sha;
-    var a = await anfrage('PUT', dateiWeg(kennung), koerper, schl);
-    return { status: a.status, sha: a.json && a.json.content ? a.json.content.sha : null };
+  function ablegen(d, sha, schl, person, kennung, nachricht) {
+    return GH.ablegen(schl, kennung + '.json', dateiText(d, person), sha, nachricht);
   }
 
   var FEHLER = {
@@ -2603,6 +2764,28 @@ window.SEHTRAINING_FASSUNG = "2026-10-31-8a7706";
     return e && FEHLER[e.art] ? e.art : 'netz';
   }
   function fehlerText(art) { return FEHLER[art] || ('GitHub meldet Fehler ' + String(art).replace('status', '')); }
+
+  // ---------------------------------------------------------------------------
+  // Fernsehtest (nur lesen)
+  // ---------------------------------------------------------------------------
+  // Das MacBook legt die Ergebnisse des Fernsehtests in einer eigenen Datei je Person ab
+  // (daten/<kennung>-ferne.json). Die Web-App liest daraus nur den letzten Test für die Startseite
+  // und schreibt diese Datei nie; so schreiben iPhone und MacBook nie in dieselbe Datei.
+  // Klappt das Lesen nicht (kein Internet), bleibt der zuletzt bekannte Wert stehen.
+  function kurzwert(e) { return e && isFinite(e.logmar) ? { logmar: e.logmar, visus: e.visus } : null; }
+  async function ferneHolen() {
+    if (!eingerichtet()) return;
+    var kennung = meta.kennung;
+    try {
+      var f = await GH.holen(schluessel(), kennung + '-ferne.json');
+      if (meta.kennung !== kennung) return;            // inzwischen andere Person eingerichtet
+      var tests = (!f.fehlt && f.inhalt && Array.isArray(f.inhalt.tests)) ? f.inhalt.tests : [];
+      var t = tests.length ? tests[tests.length - 1] : null;
+      meta.ferne = t ? { datum: t.datum, rechts: kurzwert(t.rechts), links: kurzwert(t.links), beide: kurzwert(t.beide) } : null;
+      schreiben(LS_META, meta);
+      melden();
+    } catch (e) { /* Nebensache: Anzeige bleibt beim zuletzt bekannten Wert */ }
+  }
 
   // ---------------------------------------------------------------------------
   // Sicherung im Hintergrund
@@ -2681,12 +2864,14 @@ window.SEHTRAINING_FASSUNG = "2026-10-31-8a7706";
     dauerhaftBitten();
     if (global.WebApp) await global.WebApp.vorbereiten(ui);
     if (!eingerichtet() && !meta.ohneSicherung) await einrichten(ui, true);
+    ferneHolen();
     if (!verbunden && global.addEventListener) {
       verbunden = true;
-      // Internet wieder da oder Web-App wieder im Vordergrund: Ausstehendes nachholen.
-      global.addEventListener('online', function () { hochladen(); });
+      // Internet wieder da oder Web-App wieder im Vordergrund: Ausstehendes nachholen und den
+      // letzten Fernsehtest neu lesen.
+      global.addEventListener('online', function () { hochladen(); ferneHolen(); });
       if (global.document) global.document.addEventListener('visibilitychange', function () {
-        if (global.document.visibilityState === 'visible') hochladen();
+        if (global.document.visibilityState === 'visible') { hochladen(); ferneHolen(); }
       });
     }
   }
@@ -2732,8 +2917,7 @@ window.SEHTRAINING_FASSUNG = "2026-10-31-8a7706";
   // Ergebnis { art, daten }: art = 'neu' (Datei angelegt), 'github' (Daten von GitHub geholt),
   // 'iphone' (Daten des iPhones waren neuer und sind hochgeladen).
   async function einrichtenPruefen(name, kennung, schl) {
-    var repo = await anfrage('GET', repoWeg(), null, schl);
-    if (repo.status !== 200) throw { art: 'status', status: repo.status, beim: 'repo' };
+    await GH.repoPruefen(schl);
     var f = await holen(schl, kennung);
     var lokal = lesen(LS_DATEN) || Regeln.leer(), art;
     if (f.fehlt) art = 'neu';
@@ -2911,13 +3095,14 @@ window.SEHTRAINING_FASSUNG = "2026-10-31-8a7706";
     verbinden: verbinden, laden: laden, sichern: sichern, status: status,
     abgleich: function () { return laeuft || Promise.resolve(); },
     person: function () { return meta.kennung ? meta.person : null; },
+    ferne: function () { return meta.kennung && meta.ferne ? meta.ferne : null; },
     einstellungen: einstellungen,
     beiStatus: function (f) { hoerer.push(f); },
     // nur für Tests
     _kennungAus: kennungAus, _zeitText: zeitText, _einrichtenPruefen: einrichtenPruefen, _hochladen: hochladen,
-    _jetztSichern: jetztSichern, _githubUebernehmen: githubUebernehmen, _iphoneBehalten: iphoneBehalten,
+    _jetztSichern: jetztSichern, _ferneHolen: ferneHolen, _githubUebernehmen: githubUebernehmen, _iphoneBehalten: iphoneBehalten,
     _meta: function () { return meta; }, _neuLesen: function () { meta = lesen(LS_META) || {}; lokalFehler = false; },
-    _fristSetzen: function (frist, nachholenMs) { FRIST_MS = frist; NACHHOLEN_MS = nachholenMs; }
+    _fristSetzen: function (frist, nachholenMs) { GH.fristSetzen(frist); NACHHOLEN_MS = nachholenMs; }
   };
 })(typeof window !== 'undefined' ? window : this);
 
@@ -3039,12 +3224,17 @@ window.SEHTRAINING_FASSUNG = "2026-10-31-8a7706";
   }
 
   // Zeile „Daten“ der Startseite (in der Web-App mit dem Zeitpunkt der letzten Sicherung) und,
-  // wenn der Speicher eine Person kennt (Web-App), die Zeile „Person“.
+  // wenn der Speicher eine Person kennt (Web-App), die Zeile „Person“. Gibt es einen Fernsehtest
+  // vom MacBook (nur Web-App), steht sein letzter Wert mit beiden Augen in der Zeile „Ferne“.
   function zeigeSpeicherStand() {
     $('stand-speicher').textContent = Speicher.status();
     var person = Speicher.person ? Speicher.person() : null;
     $('stand-person').textContent = person || '–';
     $('stand-person').hidden = $('stand-person-titel').hidden = !person;
+    var ferne = Speicher.ferne ? Speicher.ferne() : null;
+    var beide = ferne && ferne.beide;
+    $('stand-ferne').textContent = beide ? ('Visus ' + zahl(beide.visus, 2) + ' mit beiden Augen am ' + datumText(ferne.datum)) : '–';
+    $('stand-ferne').hidden = $('stand-ferne-titel').hidden = !beide;
   }
 
   // ---------------------------------------------------------------------------

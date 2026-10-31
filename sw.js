@@ -3,7 +3,7 @@
 // Server (die Sicherung bei GitHub) gehen unverändert ins Netz.
 // Neue Fassung: Das Bauwerkzeug setzt unten die Fassung ein; ändert sie sich, lädt das iPhone
 // alle Dateien neu. Sie gelten ab dem nächsten Öffnen der Web-App.
-var FASSUNG = '2026-10-31-8a7706';
+var FASSUNG = '2026-10-31-d51582';
 var ABLAGE = 'sehtraining-webapp-' + FASSUNG;   // eindeutiger Name, weil alle Seiten unter <name>.github.io ihre Ablagen teilen
 var DATEIEN = ['./', 'index.html', 'manifest.webmanifest', 'symbol-180.png', 'symbol-192.png', 'symbol-512.png',
   'schrift/AtkinsonHyperlegible-Regular.ttf', 'schrift/AtkinsonHyperlegible-Bold.ttf'];
