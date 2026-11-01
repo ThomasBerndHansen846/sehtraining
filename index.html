@@ -224,7 +224,7 @@ ol.schritte { margin: 0; padding-left: 1.4em; display: flex; flex-direction: col
 <script>
 // Ziel der Sicherung und Fassung des Programms (vom Bauwerkzeug eingesetzt)
 window.SEHTRAINING_ZIEL = {"api": "https://api.github.com", "besitzer": "ThomasBerndHansen846", "repo": "sehtraining-daten", "zweig": "main"};
-window.SEHTRAINING_FASSUNG = "2026-11-01-2cb34a";
+window.SEHTRAINING_FASSUNG = "2026-11-01-f34033";
 </script>
 <script>
 // ===== logik.js =====
@@ -328,8 +328,16 @@ window.SEHTRAINING_FASSUNG = "2026-11-01-2cb34a";
     }
     // Rundungsfehler der Kommazahlen begrenzen.
     t.logc = Math.round(t.logc * 1000) / 1000;
-    if (t.logc < UNTERGRENZE - 1e-9) {
-      // Die Untergrenze von 1 % beendet den Block (wie in der App-Studie).
+    if (t.logc < UNTERGRENZE - 1e-9 && t.schnellstart) {
+      // Schnellstart erreicht die Untergrenze: nicht beenden (ein paar Treffer in Folge können auch
+      // geraten sein), sondern bei 1 % mit dem normalen Treppenverfahren weitermachen. Eigene Regel
+      // seit 2026-11-01, nachdem ein Block nach 6 Durchgängen ohne einen Fehler bei 1 % endete.
+      t.logc = UNTERGRENZE;
+      t.schnellstart = false;
+      t.richtung = -1;
+    } else if (t.logc < UNTERGRENZE - 1e-9) {
+      // Drei richtige Antworten in Folge bei 1 %: Die Untergrenze beendet den Block (wie in der
+      // App-Studie).
       t.logc = UNTERGRENZE;
       t.fertig = true;
       t.grund = 'untergrenze';
@@ -400,6 +408,25 @@ window.SEHTRAINING_FASSUNG = "2026-11-01-2cb34a";
   }
 
   function schluessel(bedingung, feinheit) { return bedingung + '_' + feinheit; }
+
+  // War die Eingangssitzung 1 ungültig, weil ein Block nach der alten Regel an der Untergrenze endete,
+  // ohne dass es einen einzigen Fehler gab (bis 2026-11-01)? Dann wird sie wiederholt: Zustand zurück auf
+  // Eingang 1, die Sitzung bleibt in den Daten, mit dem Vermerk „ungueltig“. Gibt true zurück, wenn etwas
+  // geändert wurde (dann speichern).
+  function eingang1Pruefen(d) {
+    var z = d && d.zustand, s = d && d.sitzungen && d.sitzungen[d.sitzungen.length - 1];
+    if (!z || z.phase !== 'eingang2' || !s || s.art !== 'eingang1' || s.ungueltig) return false;
+    var falsch = (s.bloecke || []).some(function (b) {
+      return b.grund === 'untergrenze' && String(b.verlauf || '').indexOf(':0') < 0;
+    });
+    if (!falsch) return false;
+    s.ungueltig = 'Block an der Untergrenze ohne einen Fehler beendet (alte Regel); Eingangssitzung 1 wiederholt';
+    z.phase = 'eingang1';
+    z.eingang = null;
+    z.feinheitIdx = 0;
+    [2, 4, 6, 8].forEach(function (f) { delete z.schwellen[schluessel('ziel', f)]; });
+    return true;
+  }
 
   // Plan der nächsten Sitzung aus dem Zustand.
   function naechsteSitzung(z) {
@@ -630,7 +657,7 @@ window.SEHTRAINING_FASSUNG = "2026-11-01-2cb34a";
   global.Logik = {
     FEINHEITEN: FEINHEITEN, AUSRICHTUNGEN: AUSRICHTUNGEN, ABSTAENDE: ABSTAENDE,
     PAUSEN_BILDER: PAUSEN_BILDER, DAUER_BILDER: DAUER_BILDER, BEDINGUNGEN: BEDINGUNGEN,
-    BEDINGUNG_NAME: BEDINGUNG_NAME, STUFE: STUFE, UNTERGRENZE: UNTERGRENZE, OBERGRENZE: OBERGRENZE,
+    eingang1Pruefen: eingang1Pruefen, BEDINGUNG_NAME: BEDINGUNG_NAME, STUFE: STUFE, UNTERGRENZE: UNTERGRENZE, OBERGRENZE: OBERGRENZE,
     MINDEST_SITZUNGEN: MINDEST_SITZUNGEN,
     neueTreppe: neueTreppe, treppeAntwort: treppeAntwort, schwelle: schwelle,
     neuerZustand: neuerZustand, naechsteSitzung: naechsteSitzung,
@@ -3912,6 +3939,18 @@ window.SEHTRAINING_FASSUNG = "2026-11-01-2cb34a";
     await Speicher.verbinden(ui);
     daten = await Speicher.laden();
     if (!daten.zustand) daten.zustand = L.neuerZustand();
+    if (L.eingang1Pruefen(daten)) {
+      // Eingangssitzung 1 nach der alten Regel ungültig: wiederholen (siehe logik.js).
+      await Speicher.sichern(daten, null, null);
+      zeigeStart();
+      textAnsicht('Eingangssitzung 1 noch einmal', [], zeigeStart, [
+        'In deiner ersten Messung endete ein Block zu früh: Nach sechs Treffern in Folge galt die Messung als fertig, ' +
+        'obwohl die letzten auch geraten sein konnten. Das ist jetzt behoben.',
+        'Deshalb kommt als Nächstes noch einmal die Eingangssitzung 1, damit die Startstufe stimmt. Die erste Messung ' +
+        'bleibt in deinen Daten, als ungültig vermerkt.'
+      ], 'Verstanden');
+      return;
+    }
     zeigeStart();
     Speicher.abgleich().then(function () { zeigeSpeicherStand(); });
   }
