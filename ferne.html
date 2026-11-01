@@ -45,6 +45,7 @@ button { font: inherit; }
 .gross { display: block; width: 100%; min-height: 56px; border-radius: 14px; border: 1px solid var(--linie);
   background: var(--knopf-hg); color: var(--knopf-text); font-size: 0.95rem; font-weight: 700; padding: 10px 16px; cursor: pointer; }
 .gross.haupt { background: var(--akzent); color: var(--akzent-text); border-color: var(--akzent); }
+a.gross { box-sizing: border-box; text-align: center; text-decoration: none; line-height: 34px; }
 .gross:disabled { opacity: 0.4; cursor: default; }
 .gross.gewaehlt { outline: 3px solid var(--akzent); }
 .gross:focus-visible { outline: 3px solid var(--warnung); outline-offset: 2px; }
@@ -68,7 +69,7 @@ table.tabelle { border-collapse: collapse; font-variant-numeric: tabular-nums; f
 <script>
 // Ziel der Sicherung und Fassung des Programms (vom Bauwerkzeug eingesetzt)
 window.SEHTRAINING_ZIEL = {"api": "https://api.github.com", "besitzer": "ThomasBerndHansen846", "repo": "sehtraining-daten", "zweig": "main"};
-window.SEHTRAINING_FASSUNG = "2026-10-31-d51582";
+window.SEHTRAINING_FASSUNG = "2026-11-01-23edf9";
 </script>
 <script>
 // ===== kalibrierung.js =====
@@ -151,8 +152,6 @@ window.SEHTRAINING_FASSUNG = "2026-10-31-d51582";
       detail: 'Einstellungen \u2192 Bedienungshilfen \u2192 Anzeige & Textgr\u00f6\u00dfe \u2192 ganz unten' },
     { titel: 'True Tone aus und Night Shift aus',
       detail: 'Einstellungen \u2192 Anzeige & Helligkeit' },
-    { titel: 'Anzeigezoom auf \u201eStandard\u201c',
-      detail: 'Einstellungen \u2192 Anzeige & Helligkeit \u2192 Anzeigezoom' },
     { titel: 'Stromsparmodus aus',
       detail: 'Einstellungen \u2192 Batterie' },
     { titel: 'Helligkeit ganz hoch',
@@ -1738,6 +1737,97 @@ window.SEHTRAINING_FASSUNG = "2026-10-31-d51582";
 
 </script>
 <script>
+// ===== geraete.js =====
+// Geräte und Verbindungscode (Web-App und Fernsehtest am MacBook).
+//
+// 1. Größe aus dem Modell: Beim iPhone 12 Pro (und den Modellen mit genau demselben Bildschirm)
+//    ist bekannt, wie breit der Bildschirm ist: 1170 Bildpunkte bei 460 Bildpunkten je Zoll =
+//    64,60 mm. Die Seite ist bei Anzeigezoom „Standard“ 390 Punkte breit, bei „Vergrößert“ 320
+//    Punkte (das iPhone vergrößert dann das ganze Bild um 390/320 = 1,22). Daraus folgt, wie viele
+//    Millimeter ein Punkt sind, ohne Karte: 0,1657 bzw. 0,2019 mm. Gerechnet wird bei jedem Start
+//    neu, falls der Zoom umgestellt wurde. Passen die Maße zu keiner bekannten Fassung, gibt es
+//    keinen Wert, und es gilt wie bisher der Größenabgleich mit der Karte.
+//    Quellen: Apple, technische Daten (2532 × 1170 Bildpunkte, 460 ppi); Punkte und Zoom nach
+//    https://gist.github.com/ricsantos/e7baee6885626b9cb87c021a5097623f (390 × 844, gezoomt 320 × 693, @3x).
+//
+// 2. Verbindungscode: ein Text, in dem Name der Person, Zugangsschlüssel und Modell des iPhones
+//    stecken. Das MacBook erzeugt ihn, die Web-App liest ihn beim Einrichten. Er ist nur umgeformt
+//    (Base64), nicht verschlüsselt: Wer ihn hat, hat den Schlüssel. Aufbau: „ST1-“ und danach die
+//    Angaben als JSON in Base64 ohne +, / und = (damit er als ein Wort markiert werden kann).
+//    Die Web-App findet den Code auch in einer ganzen eingefügten Nachricht.
+(function (global) {
+  'use strict';
+
+  var MM_PRO_ZOLL = 25.4;
+
+  // Bekannte Modelle. breiteMm: Breite des Bildschirms im Hochformat. fassungen: Maße der Seite in
+  // Punkten und Bildpunkte je Punkt (devicePixelRatio) je Anzeigezoom.
+  var MODELLE = {
+    'iphone-12-pro': {
+      name: 'iPhone 12 Pro',
+      auch: 'gleicher Bildschirm: iPhone 12, 13, 13 Pro, 14',
+      breiteMm: 1170 / 460 * MM_PRO_ZOLL,
+      fassungen: [
+        { breite: 390, hoehe: 844, dpr: 3, zoom: 'standard' },
+        { breite: 320, hoehe: 693, dpr: 3, zoom: 'vergroessert' }
+      ]
+    }
+  };
+  var ANDERES = 'anderes';     // anderes Gerät: Größe mit der Karte
+  var ZOOM_TEXT = { standard: 'Anzeigezoom „Standard“', vergroessert: 'Anzeigezoom „Vergrößert“' };
+
+  function modellName(m) { return MODELLE[m] ? MODELLE[m].name : 'anderes iPhone'; }
+
+  // Millimeter je Punkt aus Modell und Bildschirm: { mmProPunkt, zoom } oder null.
+  // umgebung: { breite, hoehe, dpr } = screen.width, screen.height, devicePixelRatio. Auf dem iPhone
+  // nennt screen die Maße im Hochformat; vorsichtshalber wird auch das Querformat erkannt.
+  function groesse(modell, umgebung) {
+    var mdl = MODELLE[modell];
+    if (!mdl || !umgebung) return null;
+    var kurz = Math.min(umgebung.breite, umgebung.hoehe), lang = Math.max(umgebung.breite, umgebung.hoehe);
+    for (var i = 0; i < mdl.fassungen.length; i++) {
+      var f = mdl.fassungen[i];
+      if (kurz === f.breite && lang === f.hoehe && Math.abs((umgebung.dpr || 0) - f.dpr) < 0.01) {
+        return { mmProPunkt: mdl.breiteMm / f.breite, zoom: f.zoom };
+      }
+    }
+    return null;
+  }
+
+  // Base64 ohne +, / und = (UTF-8 für Umlaute im Namen).
+  function zuB64(text) {
+    return global.btoa(unescape(encodeURIComponent(text))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  }
+  function ausB64(b) {
+    var s = String(b).replace(/-/g, '+').replace(/_/g, '/');
+    while (s.length % 4) s += '=';
+    return decodeURIComponent(escape(global.atob(s)));
+  }
+
+  function codeErzeugen(name, schluessel, modell) {
+    return 'ST1-' + zuB64(JSON.stringify({ v: 1, n: String(name), s: String(schluessel), m: modell || ANDERES }));
+  }
+
+  // Liest den Code aus einem beliebigen Text (z. B. der ganzen kopierten Nachricht).
+  // Ergebnis { name, schluessel, modell } oder Fehler { art: 'fehlt' | 'kaputt' }.
+  function codeLesen(text) {
+    var t = String(text || '').replace(/\s+/g, '');             // Umbrüche beim Kopieren entfernen
+    var m = /ST1-([A-Za-z0-9_-]+)/.exec(t);
+    if (!m) throw { art: 'fehlt' };
+    var d;
+    try { d = JSON.parse(ausB64(m[1])); } catch (e) { throw { art: 'kaputt' }; }
+    if (!d || d.v !== 1 || !d.n || !d.s) throw { art: 'kaputt' };
+    return { name: String(d.n).trim(), schluessel: String(d.s).replace(/\s+/g, ''), modell: MODELLE[d.m] ? d.m : ANDERES };
+  }
+
+  global.Geraete = {
+    MODELLE: MODELLE, ANDERES: ANDERES, ZOOM_TEXT: ZOOM_TEXT,
+    modellName: modellName, groesse: groesse, codeErzeugen: codeErzeugen, codeLesen: codeLesen
+  };
+})(typeof window !== 'undefined' ? window : this);
+
+</script>
+<script>
 // ===== github_zugriff.js =====
 // Zugriff auf Dateien im privaten Repository bei GitHub (Contents-Schnittstelle), mit Frist.
 // Gemeinsam für die Sicherung der Web-App (speicher_github.js) und den Fernsehtest am MacBook
@@ -1837,8 +1927,13 @@ window.SEHTRAINING_FASSUNG = "2026-10-31-d51582";
  * rechte Auge, das linke Auge und beide Augen.
  *
  * Einmal je MacBook: Größenabgleich mit der Karte (wie am iPhone), Abstand mit dem Maßband messen und
- * eingeben, Zugangsschlüssel „Sehtraining MacBook“ einfügen. Die Buchstaben werden auf den
- * eingegebenen Abstand gerechnet.
+ * eingeben, den Zugangsschlüssel „Sehtraining“ einfügen („Geräte verbinden“). Die Buchstaben werden auf
+ * den eingegebenen Abstand gerechnet.
+ *
+ * Geräte verbinden (seit 2026-11-01): Ein Schlüssel für alle Geräte. Ist er am MacBook eingefügt, schickt
+ * die Seite je Person eine Nachricht an deren iPhone (Teilen-Fenster von Safari, sonst Zwischenablage):
+ * zwei Sätze Anleitung, der Link zur Web-App und der Verbindungscode (Name, Schlüssel und Modell des
+ * iPhones in einem Text, siehe geraete.js). Am iPhone wird die ganze Nachricht in die Web-App eingesetzt.
  *
  * Speicher (Entscheidung des Nutzers 2026-10-31, Weg A): Ergebnisse sofort im Browser-Speicher des
  * MacBooks, dann im Hintergrund in einer eigenen Datei je Person im privaten Repository
@@ -1847,7 +1942,7 @@ window.SEHTRAINING_FASSUNG = "2026-10-31-d51582";
  * Größe und Abstand liegen zusätzlich in daten/geraet-macbook.json: Löscht Safari den Speicher des
  * MacBooks (7-Tage-Regel), genügt ein neuer Schlüssel, Größe und Abstand kommen von GitHub zurück.
  *
- * Benutzt: Kalibrierung.groesse, Buchstabentest (Fassung „ferne“), GitHubZugriff, SpeicherRegeln.
+ * Benutzt: Kalibrierung.groesse, Buchstabentest (Fassung „ferne“), GitHubZugriff, SpeicherRegeln, Geraete.
  * Reine Funktionen (mit jsc testbar) unter window.Ferne._intern.
  */
 (function (global) {
@@ -1891,6 +1986,16 @@ window.SEHTRAINING_FASSUNG = "2026-10-31-d51582";
   // ======================================================================
   // 2. Reine Funktionen (ohne DOM)
   // ======================================================================
+
+  // Vorausgefüllter Link zur Maske für einen neuen Zugangsschlüssel bei GitHub: Name „Sehtraining“, Besitzer
+  // aus dem Ziel der Sicherung, kein Ablauf, Inhalte lesen und schreiben. Das Repository lässt sich so nicht
+  // vorauswählen; das wählt man auf der Seite von GitHub selbst.
+  function schluesselLink(ziel) {
+    var q = [['name', 'Sehtraining'], ['description', 'Web-App Sehtraining (iPhones und MacBook), nur Repository ' + (ziel.repo || '')],
+      ['target_name', ziel.besitzer || ''], ['expires_in', 'none'], ['contents', 'write']];
+    return 'https://github.com/settings/personal-access-tokens/new?' +
+      q.map(function (p) { return p[0] + '=' + encodeURIComponent(p[1]); }).join('&');
+  }
 
   function zahlDe(x, stellen) {
     var s = Math.abs(x).toFixed(stellen).replace('.', ',');
@@ -2177,7 +2282,7 @@ window.SEHTRAINING_FASSUNG = "2026-10-31-d51582";
       el('div', { class: 'reihe' }, [
         knopf('Größe abgleichen', !groesseOk, zeigeGroesse),
         knopf('Abstand eingeben', groesseOk && !abstandOk, zeigeAbstand),
-        knopf(schluessel() ? 'Schlüssel ersetzen' : 'Sicherung einrichten', groesseOk && abstandOk && !schluessel(), zeigeSicherung)
+        knopf('Geräte verbinden', false, function () { if (schluessel()) zeigeVerbinden(); else zeigeSicherung(); })
       ]),
       alsProgramm() ? null : el('p', { class: 'leise', text: 'Tipp: In Safari „Ablage“ → „Zum Dock hinzufügen“. Dann öffnet sich der ' +
         'Fernsehtest als eigenes Programm im Dock. Safari löscht sonst Größe, Abstand und Schlüssel, wenn die Seite sieben Tage ' +
@@ -2209,12 +2314,20 @@ window.SEHTRAINING_FASSUNG = "2026-10-31-d51582";
     feld.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') { ev.preventDefault(); beginnen.click(); } });
     feld.addEventListener('input', function () { person = feld.value.trim(); });
 
-    // Solange die Vorbereitung fehlt, steht die Karte „Dieses MacBook“ oben, sonst unten.
+    // Solange die Vorbereitung fehlt, steht die Karte „Dieses MacBook“ oben, sonst unten. Ganz oben,
+    // solange kein Schlüssel da ist: „Geräte verbinden“ (verbindet auch die iPhones).
     var bereit = groesseOk && abstandOk;
+    var verbinden = schluessel() ? null : el('section', { class: 'karte' }, [
+      el('span', { class: 'eyebrow', text: 'Zuerst' }),
+      el('p', { text: 'Geräte verbinden: einmal den Zugangsschlüssel bei GitHub anlegen und hier einsetzen, dann an jedes iPhone ' +
+        'eine Nachricht mit dem Verbindungscode schicken. Die Seite führt Schritt für Schritt.' }),
+      knopf('Geräte verbinden', true, function () { zeigeSicherung(); })
+    ]);
     ansicht([
       el('header', { class: 'kopf' }, [el('h1', { text: 'Fernsehtest' }),
         el('p', { class: 'unter', text: 'Buchstaben in der Ferne, ohne Brille. Eine zweite Person bedient das MacBook.' })]),
       meldung ? el('p', { class: 'hinweis', text: meldung }) : null,
+      verbinden,
       bereit ? null : karteGeraet,
       karteTest,
       ergebnisKarte(),
@@ -2322,21 +2435,120 @@ window.SEHTRAINING_FASSUNG = "2026-10-31-d51582";
       try {
         var uebernommen = await einrichtenPruefen(s);
         hochladen();
-        zeigeStart('Sicherung eingerichtet.' + (uebernommen ? ' Größe bzw. Abstand kamen von GitHub zurück.' : ''));
+        zeigeVerbinden('Dieses MacBook ist verbunden.' + (uebernommen ? ' Größe bzw. Abstand kamen von GitHub zurück.' : ''));
       } catch (e) {
         pruefen.disabled = false; hinweis.textContent = einrichtenFehler(e);
       }
     });
+    var ziel = global.SEHTRAINING_ZIEL || {};
     ansicht([
-      el('header', { class: 'kopf' }, [el('h1', { text: 'Sicherung einrichten' })]),
+      el('header', { class: 'kopf' }, [el('h1', { text: 'Geräte verbinden: Schritt 1 von 2' }),
+        el('p', { class: 'unter', text: 'Ein Zugangsschlüssel für alle Geräte: Er erlaubt nur, die Trainingsdaten im privaten ' +
+          'Repository „' + (ziel.repo || '') + '“ zu lesen und zu schreiben.' })]),
       el('section', { class: 'karte' }, [
-        el('p', { text: 'Einmal auf diesem MacBook: den Zugangsschlüssel „Sehtraining MacBook“ einfügen (Anleitung, Karte 2). ' +
-          'Danach legt das MacBook jedes Ergebnis von selbst bei GitHub ab, in einer eigenen Datei je Person.' }),
-        el('label', { class: 'feld-titel', text: 'Zugangsschlüssel (einfügen mit Befehlstaste und V)' }), feld, hinweis,
-        el('div', { class: 'reihe' }, [pruefen, knopf('Zurück', false, function () { zeigeStart(); })])
+        el('ol', { class: 'schritte' }, [
+          el('li', null, ['Auf „GitHub öffnen“ klicken. Es öffnet sich bei GitHub die Maske für einen neuen Schlüssel, schon ' +
+            'ausgefüllt (Name „Sehtraining“, kein Ablaufdatum, Lesen und Schreiben). Falls GitHub fragt: anmelden.',
+            el('div', { class: 'reihe' }, [el('a', { class: 'gross haupt', href: schluesselLink(ziel), target: '_blank', rel: 'noopener', text: 'GitHub öffnen' })])]),
+          el('li', { text: 'Dort bei „Repository access“ „Only select repositories“ wählen und dann „' + (ziel.repo || '') + '“. ' +
+            'Diesen Schritt nicht auslassen: Sonst dürfte der Schlüssel in allen deinen Repositorys schreiben.' }),
+          el('li', { text: 'Ganz unten „Generate token“ klicken. Den Schlüssel (beginnt mit „github_pat_“) mit dem Kopier-Symbol ' +
+            'daneben kopieren. GitHub zeigt ihn nur dieses eine Mal; mehr musst du dir nicht merken.' }),
+          el('li', { text: 'Hierher zurück, ins Feld klicken, mit Befehlstaste und V einsetzen, „Prüfen und speichern“.' })
+        ]),
+        el('label', { class: 'feld-titel', text: 'Zugangsschlüssel' }), feld, hinweis,
+        el('div', { class: 'reihe' }, [pruefen, knopf('Zurück', false, function () { zeigeStart(); })]),
+        el('p', { class: 'leise', text: 'Mit diesem Schlüssel sichert das MacBook die Ergebnisse des Fernsehtests. Im zweiten Schritt ' +
+          'schickt es denselben Schlüssel, verpackt im Verbindungscode, an die iPhones.' })
       ])
     ]);
     feld.focus();
+  }
+
+  // --- Geräte verbinden, Schritt 2: je Person eine Nachricht an ihr iPhone ---
+  // Die Nachricht: zwei Sätze Anleitung, der Link zur Web-App, der Verbindungscode.
+  function nachricht(name, code) {
+    var adresse = new URL('./', global.location.href).href;
+    return 'Sehtraining für ' + name + '\n' +
+      '1. Diesen Link in Safari öffnen und die Seite zum Home-Bildschirm hinzufügen: ' + adresse + '\n' +
+      '2. Die Web-App über das neue Symbol öffnen, diese ganze Nachricht kopieren und dort einsetzen; danach die Nachricht löschen.\n\n' +
+      'Verbindungscode (enthält den Zugangsschlüssel): ' + code + '\n';
+  }
+  function modellWahl(wert) {
+    var G = global.Geraete;
+    var optionen = Object.keys(G.MODELLE).map(function (k) {
+      return el('option', { value: k, text: G.MODELLE[k].name + ' (' + G.MODELLE[k].auch + ')' });
+    });
+    optionen.push(el('option', { value: G.ANDERES, text: 'anderes iPhone (Größe mit der Karte)' }));
+    var wahl = el('select', { class: 'eingabe' }, optionen);
+    wahl.value = wert || 'iphone-12-pro';
+    return wahl;
+  }
+  function zeigeVerbinden(meldung) {
+    var G = global.Geraete, hinweis = el('p', { class: 'hinweis', hidden: !meldung, text: meldung || '' });
+    geraet.modelle = geraet.modelle || {};
+    function melde(t) { hinweis.textContent = t; hinweis.hidden = false; }
+    function personKarte(name) {
+      var k = global.SpeicherRegeln.kennungAus(name);
+      var wahl = modellWahl(geraet.modelle[k]);
+      wahl.addEventListener('change', function () { geraet.modelle[k] = wahl.value; geraetSpeichern(); });
+      function text() { return nachricht(name, G.codeErzeugen(name, schluessel(), wahl.value)); }
+      var schicken = knopf('An das iPhone von ' + name + ' schicken', true, function () {
+        var t = text();
+        if (global.navigator.share) {
+          global.navigator.share({ title: 'Sehtraining für ' + name, text: t }).then(function () {
+            melde('Nachricht für ' + name + ' ist unterwegs. Am iPhone: Link öffnen, zum Home-Bildschirm hinzufügen, ' +
+              'Web-App öffnen, die ganze Nachricht kopieren und einsetzen.');
+          }, function (e) {
+            if (e && e.name === 'AbortError') return;          // Fenster geschlossen: nichts tun
+            kopieren(t, name);
+          });
+        } else kopieren(t, name);
+      });
+      var kopie = knopf('Kopieren', false, function () { kopieren(text(), name); });
+      return el('div', { class: 'karte person' }, [
+        el('h2', { text: name }),
+        el('label', { class: 'feld-titel', text: 'Modell des iPhones von ' + name }), wahl,
+        el('div', { class: 'reihe' }, [schicken, kopie])
+      ]);
+    }
+    function kopieren(t, name) {
+      var zw = global.navigator.clipboard;
+      if (!zw || !zw.writeText) { melde('Kopieren ging nicht. Bitte Safari aktualisieren.'); return; }
+      zw.writeText(t).then(function () {
+        melde('Die Nachricht für ' + name + ' ist kopiert. In Nachrichten an ' + name + ' einfügen und senden. ' +
+          'Ist es dein eigenes iPhone mit demselben Apple-Konto, kannst du sie dort auch direkt in der Web-App einsetzen ' +
+          '(Universelle Zwischenablage).');
+      }, function () { melde('Kopieren ging nicht. Bitte noch einmal auf „Kopieren“ klicken.'); });
+    }
+    var namen = geraet.personen || [];
+    var neuFeld = el('input', { class: 'eingabe', type: 'text', autocomplete: 'off', placeholder: 'Vorname' });
+    function hinzufuegen() {
+      var n = neuFeld.value.trim();
+      if (!global.SpeicherRegeln.kennungAus(n)) { neuFeld.focus(); return; }
+      personMerken(n);
+      zeigeVerbinden();
+    }
+    neuFeld.addEventListener('keydown', function (ev) { if (ev.key === 'Enter') { ev.preventDefault(); hinzufuegen(); } });
+    ansicht([
+      el('header', { class: 'kopf' }, [el('h1', { text: 'Geräte verbinden: Schritt 2 von 2' }),
+        el('p', { class: 'unter', text: 'Dieses MacBook ist verbunden. Jetzt für jede Person eine Nachricht an ihr iPhone.' })]),
+      hinweis,
+      el('section', { class: 'karte' }, [
+        el('p', { text: 'Die Nachricht enthält den Link zur Web-App und den Verbindungscode: Name, Zugangsschlüssel und Modell des ' +
+          'iPhones in einem Text. Am besten über Nachrichten oder AirDrop schicken. Am iPhone wird die ganze Nachricht kopiert ' +
+          'und in der Web-App eingesetzt; danach die Nachricht löschen, weil sie den Schlüssel enthält.' }),
+        el('p', { class: 'leise', text: 'Das Modell bestimmt, ob die Web-App die Größe ohne Karte kennt (beim iPhone 12 Pro auch mit ' +
+          'Anzeigezoom „Vergrößert“).' })
+      ]),
+      namen.length ? null : el('p', { class: 'leise', text: 'Noch keine Person: unten den Vornamen eintragen.' })
+    ].concat(namen.map(personKarte)).concat([
+      el('section', { class: 'karte' }, [
+        el('label', { class: 'feld-titel', text: 'Weitere Person (Vorname, genau wie später am iPhone)' }), neuFeld,
+        el('div', { class: 'reihe' }, [knopf('Hinzufügen', false, hinzufuegen), knopf('Zurück zur Startseite', false, function () { zeigeStart(); })])
+      ]),
+      el('p', { class: 'leise', text: 'Anderen Schlüssel verwenden: ' }, [knopf('Schlüssel ersetzen', false, function () { zeigeSicherung(); })])
+    ]));
   }
 
   // --- Ablauf eines Tests ---
@@ -2436,7 +2648,7 @@ window.SEHTRAINING_FASSUNG = "2026-10-31-d51582";
     // nur für Tests
     _intern: {
       abstandAusText: abstandAusText, abstandText: abstandText, zusammenfuehren: zusammenfuehren, dateiText: dateiText,
-      groesseGilt: groesseGilt, messung: messung, fehlerArt: fehlerArt, voruebergehend: voruebergehend, zahlDe: zahlDe,
+      groesseGilt: groesseGilt, messung: messung, schluesselLink: schluesselLink, fehlerArt: fehlerArt, voruebergehend: voruebergehend, zahlDe: zahlDe,
       datumHeute: datumHeute, einenHochladen: einenHochladen, einrichtenPruefen: einrichtenPruefen, hochladen: hochladen,
       sicherungStatus: sicherungStatus, verlauf: verlauf,
       neuLesen: function () { geraet = lesen(LS_GERAET) || {}; letzterFehler = null; }
