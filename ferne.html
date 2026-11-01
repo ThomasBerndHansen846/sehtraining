@@ -69,7 +69,7 @@ table.tabelle { border-collapse: collapse; font-variant-numeric: tabular-nums; f
 <script>
 // Ziel der Sicherung und Fassung des Programms (vom Bauwerkzeug eingesetzt)
 window.SEHTRAINING_ZIEL = {"api": "https://api.github.com", "besitzer": "ThomasBerndHansen846", "repo": "sehtraining-daten", "zweig": "main"};
-window.SEHTRAINING_FASSUNG = "2026-11-01-23edf9";
+window.SEHTRAINING_FASSUNG = "2026-11-01-2cb34a";
 </script>
 <script>
 // ===== kalibrierung.js =====
@@ -148,8 +148,8 @@ window.SEHTRAINING_FASSUNG = "2026-11-01-23edf9";
 
   // Die Punkte der Prüfliste: Titel und Weg durch die iPhone-Einstellungen.
   var PRUEFPUNKTE = [
-    { titel: 'Automatische Helligkeit aus',
-      detail: 'Einstellungen \u2192 Bedienungshilfen \u2192 Anzeige & Textgr\u00f6\u00dfe \u2192 ganz unten' },
+    { titel: 'Auto-Helligkeit aus',
+      detail: 'Einstellungen \u2192 Bedienungshilfen \u2192 Anzeige & Textgr\u00f6\u00dfe \u2192 ganz unten \u201eAuto-Helligkeit\u201c (nicht \u201eAutomatische Sperre\u201c)' },
     { titel: 'True Tone aus und Night Shift aus',
       detail: 'Einstellungen \u2192 Anzeige & Helligkeit' },
     { titel: 'Stromsparmodus aus',
@@ -2323,7 +2323,16 @@ window.SEHTRAINING_FASSUNG = "2026-11-01-23edf9";
         'eine Nachricht mit dem Verbindungscode schicken. Die Seite führt Schritt für Schritt.' }),
       knopf('Geräte verbinden', true, function () { zeigeSicherung(); })
     ]);
+    // Auf einem iPhone oder iPad ist diese Seite falsch: Hinweis mit Knopf zum Sehtraining.
+    var mobil = /iPhone|iPad|iPod|Android/.test(global.navigator.userAgent || '') ||
+      (global.navigator.maxTouchPoints > 1 && /Macintosh/.test(global.navigator.userAgent || ''));
+    var falsch = mobil ? el('section', { class: 'karte' }, [
+      el('p', { class: 'hinweis', text: 'Das ist die Seite für den Fernsehtest am MacBook. Das Sehtraining für das iPhone hat eine ' +
+        'andere Adresse (ohne „ferne.html“). Liegt diese Seite auf dem Home-Bildschirm, das Symbol bitte entfernen.' }),
+      el('a', { class: 'gross haupt', href: './', text: 'Zum Sehtraining für das iPhone' })
+    ]) : null;
     ansicht([
+      falsch,
       el('header', { class: 'kopf' }, [el('h1', { text: 'Fernsehtest' }),
         el('p', { class: 'unter', text: 'Buchstaben in der Ferne, ohne Brille. Eine zweite Person bedient das MacBook.' })]),
       meldung ? el('p', { class: 'hinweis', text: meldung }) : null,
@@ -2496,7 +2505,9 @@ window.SEHTRAINING_FASSUNG = "2026-11-01-23edf9";
       var schicken = knopf('An das iPhone von ' + name + ' schicken', true, function () {
         var t = text();
         if (global.navigator.share) {
-          global.navigator.share({ title: 'Sehtraining für ' + name, text: t }).then(function () {
+          // Die Adresse der Web-App ausdrücklich mitgeben: Sonst hängt Safari womöglich die Adresse dieser
+          // Seite (ferne.html) an, und am iPhone landet man auf der Seite fürs MacBook.
+          global.navigator.share({ title: 'Sehtraining für ' + name, text: t, url: new URL('./', global.location.href).href }).then(function () {
             melde('Nachricht für ' + name + ' ist unterwegs. Am iPhone: Link öffnen, zum Home-Bildschirm hinzufügen, ' +
               'Web-App öffnen, die ganze Nachricht kopieren und einsetzen.');
           }, function (e) {
